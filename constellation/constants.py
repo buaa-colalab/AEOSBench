@@ -1,0 +1,33 @@
+__all__ = [
+    'TIMESTAMP',
+    'INTERVAL',
+    'MAX_TIME_STEP',
+    'DATA_ROOT',
+    'ANNOTATIONS_ROOT',
+    'CONSTELLATIONS_ROOT',
+    'ORBITS_ROOT',
+    'SATELLITES_ROOT',
+    'TASKSETS_ROOT',
+    'TRAJECTORIES_ROOT',
+    'STATISTICS_PATH',
+]
+
+import pathlib
+
+TIMESTAMP = '20190101000000'
+
+INTERVAL = 1.  # seconds
+
+MAX_TIME_STEP = 3600
+
+DATA_ROOT = pathlib.Path('data')
+ANNOTATIONS_ROOT = DATA_ROOT / 'annotations.tabu.1'
+CONSTELLATIONS_ROOT = DATA_ROOT / 'constellations'
+ORBITS_ROOT = DATA_ROOT / 'orbits'
+SATELLITES_ROOT = DATA_ROOT / 'satellites'
+TASKSETS_ROOT = DATA_ROOT / 'tasksets'
+TRAJECTORIES_ROOT = DATA_ROOT / 'trajectories'
+
+STATISTICS_PATH = DATA_ROOT / 'statistics_new.pth'
+
+MU_EARTH = 398600436000000.0  # in m^3/s^2
