@@ -1,0 +1,1 @@
+PYTHONPATH=:$PYTHONPATH WORLD_SIZE=4 RANK=$1 python -m rl.eval_all time_model_plus_2w rl/config_eval.py --load-model-from work_dirs/archive/50k_train_retry_tabuann_smaller/checkpoints/iter_20000/model.pth
