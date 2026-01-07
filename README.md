@@ -14,23 +14,7 @@ bash setup.sh
 ## pre-steps
 
 ```bash
-mkdir tools/mrp_fit/sats
-# do mrp test
-mkdir data/mrp_result
-mkdir data/mrp_sat
-PYTHONPATH=:${PYTHONPATH} python tools/mrp_fit/gen_one_sat.py
-PYTHONPATH=:${PYTHONPATH} python tools/all_data_generator.py
-PYTHONPATH=:${PYTHONPATH} python tools/mrp_fit/do_test.py
-cd tools/mrp_fit/
-python post_process.py
-# make sure you have more than 50 useful sats
-python post_process2.py
-```
-
-## tested
-
-```bash
-# generate constellations and tasksets
+PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 2 tools/generate_satellites.py
 PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
 
 # train transformer model

@@ -9,7 +9,7 @@ import torch
 
 from ..constants import MAX_TIME_STEP
 
-from ..data import Actions, Constellation, Taskset
+from ..data import Actions, Constellation, TaskSet
 from .timer import Timer
 
 
@@ -54,7 +54,7 @@ class BaseEnvironment(ABC):
         pass
 
     @abstractmethod
-    def is_visible(self, tasks: Taskset) -> torch.Tensor:
+    def is_visible(self, tasks: TaskSet) -> torch.Tensor:
         pass
 
     @abstractmethod

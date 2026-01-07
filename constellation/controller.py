@@ -1,6 +1,5 @@
 __all__ = [
     'Controller',
-    'test_mrp',
 ]
 
 import itertools
@@ -19,7 +18,7 @@ from .callbacks.memo import Memo, get_memo
 
 from .algorithms import BaseAlgorithm, OptimalAlgorithm
 from .callbacks.base import BaseCallback
-from .data import Taskset, Constellation
+from .data import TaskSet, Constellation
 from .environments import BaseEnvironment
 from .evaluators import BaseEvaluator, CompletionRateEvaluator, PCompletionRateEvaluator, WCompletionRateEvaluator, WPCompletionRateEvaluator, TurnAroundTimeEvaluator, PowerEvaluator
 from .loggers import BaseLogger, PthLogger, VisualizationLogger
@@ -59,11 +58,12 @@ class Controller:
         ordinal: int,
         algorithm: BaseAlgorithm,
         max_time_step: int = MAX_TIME_STEP,
-    ) -> List[float]:
+        progress_bar: bool = True,
+    ) -> Memo:
 
         memo = Memo()
 
-        for _ in trange(max_time_step):
+        for _ in trange(max_time_step, disable=not progress_bar):
 
             actions, dispatch_ids = algorithm.step(
                 tasks=self._task_manager.ongoing_tasks,
@@ -80,14 +80,8 @@ class Controller:
         for callback in self._callbacks:  # TODO: extract & combine
             callback.on_run_end(memo=memo, save_name=str(ordinal))
         metrics = get_memo(memo, 'metrics')
-        return [
-            metrics['CR'],
-            metrics['PCR'],
-            metrics['WCR'],
-            metrics['WPCR'],
-            metrics['TT'],
-            metrics['PC'],
-        ]
+
+        return metrics  # TODO: return memo
 
     def step(
         self,
@@ -116,7 +110,7 @@ def main() -> None:
     from .data import Task
     from .environments import BasiliskEnvironment
 
-    tasks: Taskset = Taskset.load('data/tasksets/test/00/00000.json')
+    tasks: TaskSet = TaskSet.load('data/tasksets/test/00/00000.json')
     constellation = Constellation.load(
         'data/constellations/test/00/00000.json'
     )
@@ -153,47 +147,6 @@ def main() -> None:
     )
 
     print(controller.run(0, algorithm))
-
-
-def test_mrp(id_: int) -> float:
-    from .data import Task
-    from .environments import BasiliskEnvironment
-
-    tasks: Taskset = Taskset.load(
-        f'data/tasksets/mrp_test/{id_ // 1000:02}/{id_:05}.json'
-    )
-    constellation = Constellation.load(f'data/mrp_sat/{id_}.json')
-    time_string = '20190101000000'
-    environment = BasiliskEnvironment(
-        start_time=0,
-        standard_time_init=time_string,
-        constellation=constellation,
-        all_tasks=tasks,
-    )
-    task_manager = TaskManager(timer=environment.timer, tasks=tasks)
-    algorithm = OptimalAlgorithm(timer=environment.timer)
-    algorithm.prepare(environment, task_manager)
-
-    e0 = CompletionRateEvaluator()
-    e1 = PCompletionRateEvaluator()
-    e2 = WCompletionRateEvaluator()
-    e3 = WPCompletionRateEvaluator()
-    et = TurnAroundTimeEvaluator()
-    ep = PowerEvaluator()
-    evaluators = [e0, e1, e2, e3, et, ep]
-    loggers = []
-
-    callbacks = [*evaluators, *loggers]
-
-    controller = Controller(
-        environment=environment,
-        task_manager=task_manager,
-        callbacks=callbacks,
-    )
-
-    mm = controller.run(0, algorithm)
-
-    return mm[0]
 
 
 if __name__ == "__main__":

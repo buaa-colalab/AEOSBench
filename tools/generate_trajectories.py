@@ -9,7 +9,7 @@ from todd.patches.py_ import json_dump, json_load
 from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
 from constellation.algorithms import OptimalAlgorithm
 from constellation.controller import Controller
-from constellation.data import Constellation, Task, Taskset
+from constellation.data import Constellation, Task, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     CompletionRateEvaluator,
@@ -51,7 +51,7 @@ def generate_trajectory(
             todd.logger.info(f'{split=} {i=} tabu path not exists')
             return None
 
-    taskset: Taskset[Task] = Taskset.load(str(tasks_path))
+    taskset: TaskSet[Task] = TaskSet.load(str(tasks_path))
     constellation = Constellation.load(str(constellation_path))
 
     trajectory_path.parent.mkdir(parents=True, exist_ok=True)

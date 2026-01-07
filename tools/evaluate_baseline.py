@@ -12,7 +12,7 @@ from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
 from constellation.algorithms import TabuOptimalAlgorithm
 from constellation import ANNOTATIONS_ROOT
 from constellation.controller import Controller
-from constellation.data import Constellation, Task, Taskset
+from constellation.data import Constellation, Task, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     CompletionRateEvaluator,

@@ -32,7 +32,7 @@ from constellation.data import (
     Actions,
     Constellation,
     Task,
-    Taskset,
+    TaskSet,
 )
 from constellation.environments import BasiliskEnvironment, BaseEnvironment
 from constellation.evaluators import (
@@ -213,7 +213,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
             / f'{id_:05}.json'
         )
-        tasks: Taskset[Task] = Taskset.load(str(taskset_path))
+        tasks: TaskSet[Task] = TaskSet.load(str(taskset_path))
 
         simulator = BasiliskEnvironment(
             standard_time_init=TIMESTAMP,

@@ -3,7 +3,7 @@ __all__ = [
     'TaskDict',
     'TaskDicts',
     'Task',
-    'Taskset',
+    'TaskSet',
 ]
 
 import dataclasses
@@ -69,32 +69,42 @@ class Task:
         ]
 
     @classmethod
-    def sample(cls, id_: int, test: bool) -> Self:
+    def sample(cls, id_: int) -> Self:
         # e.g. 20
-        duration = random.randint(15, 60) if not test else 10
+        duration = random.randint(15, 60)
+
         # e.g. 3540 \in [0, 3540]
-        release_time = random.randint(
-            0, MAX_TIME_STEP - duration * 3
-        ) if not test else 0
+        release_time = random.randint(0, MAX_TIME_STEP - duration * 3)
         # e.g. 3600 \in [3600, 3600]
-        due_time = random.randint(
-            release_time + duration * 3, MAX_TIME_STEP
-        ) if not test else 3600
+        due_time = random.randint(release_time + duration * 3, MAX_TIME_STEP)
         return cls(
             id_,
             release_time,
             due_time,
             duration,
             Coordinate(
-                random.uniform(-90, 90)
-                if not test else random.uniform(-10, 10),
+                random.uniform(-90, 90),
+                random.uniform(-180, 180),
+            ),
+            SensorType.VISIBLE,
+        )
+
+    @classmethod
+    def sample_mrp(cls, id_: int) -> Self:
+        return cls(
+            id_,
+            0,
+            3600,
+            10,
+            Coordinate(
+                random.uniform(-10, 10),
                 random.uniform(-180, 180),
             ),
             SensorType.VISIBLE,
         )
 
 
-class Taskset(UserList[Task]):
+class TaskSet(UserList[Task]):
 
     @property
     def durations(self) -> list[int]:
@@ -115,8 +125,12 @@ class Taskset(UserList[Task]):
         return cls.from_dicts(json_load(f))
 
     @classmethod
-    def sample(cls, n: int, test: bool) -> Self:
-        return cls(starmap(Task.sample, ((i, test) for i in range(n))))
+    def sample(cls, n: int) -> Self:
+        return cls(map(Task.sample, range(n)))
+
+    @classmethod
+    def sample_mrp(cls, n: int) -> Self:
+        return cls(map(Task.sample_mrp, range(n)))
 
     def to_tensor(self) -> tuple[torch.Tensor, torch.Tensor]:
         sensor_type = torch.tensor([task.sensor_type for task in self])

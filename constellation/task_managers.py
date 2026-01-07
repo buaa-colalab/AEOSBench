@@ -6,7 +6,7 @@ from typing import cast
 
 import torch
 
-from .data import Taskset
+from .data import TaskSet
 from .environments import Timer
 
 # 0-- unreleased ---+-- ongoing --+-- succeeded --+-- succeeded --->
@@ -24,7 +24,7 @@ class TaskManager:
         self,
         *args,
         timer: Timer,
-        tasks: Taskset,
+        tasks: TaskSet,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -38,8 +38,8 @@ class TaskManager:
 
         self._succeeded_flags = torch.zeros(len(tasks), dtype=torch.bool)
 
-    def _filter_tasks(self, flags: torch.Tensor) -> Taskset:
-        return Taskset(task for task, flag in zip(self._tasks, flags) if flag)
+    def _filter_tasks(self, flags: torch.Tensor) -> TaskSet:
+        return TaskSet(task for task, flag in zip(self._tasks, flags) if flag)
 
     @property
     def unreleased_flags(self) -> torch.Tensor:
@@ -69,23 +69,23 @@ class TaskManager:
         return self.succeeded_flags | self.failed_flags
 
     @property
-    def all_tasks(self) -> Taskset:
+    def all_tasks(self) -> TaskSet:
         return self._tasks
 
     @property
-    def ongoing_tasks(self) -> Taskset:
+    def ongoing_tasks(self) -> TaskSet:
         return self._filter_tasks(self.ongoing_flags)
 
     @property
-    def succeeded_tasks(self) -> Taskset:
+    def succeeded_tasks(self) -> TaskSet:
         return self._filter_tasks(self.succeeded_flags)
 
     @property
-    def failed_tasks(self) -> Taskset:
+    def failed_tasks(self) -> TaskSet:
         return self._filter_tasks(self.failed_flags)
 
     @property
-    def closed_task(self) -> Taskset:
+    def closed_task(self) -> TaskSet:
         return self._filter_tasks(self.closed_flags)
 
     @property

@@ -26,7 +26,7 @@ from constellation import (
     TASKSETS_ROOT,
     TRAJECTORIES_ROOT,
 )
-from constellation.data import Constellation, Taskset
+from constellation.data import Constellation, TaskSet
 
 from .dataset import (
     DynamicConstellationData,
@@ -252,7 +252,7 @@ class TimeDataset(torch.utils.data.Dataset[Batch]):
             TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
             / f'{id_:05}.json'
         )
-        _, static_data = Taskset.load(str(taskset_path)).to_tensor()
+        _, static_data = TaskSet.load(str(taskset_path)).to_tensor()
 
         static_data = einops.repeat(static_data, 'nt nd -> t nt nd', t=t)
 

@@ -14,7 +14,7 @@ from Basilisk.utilities.simIncludeGravBody import gravBodyFactory
 from Basilisk.utilities.SimulationBaseClass import SimBaseClass
 
 from ...constants import INTERVAL, TIMESTAMP
-from ...data import Actions, Constellation, Taskset
+from ...data import Actions, Constellation, TaskSet
 from ..base import BaseEnvironment
 from ..geodetics import GeodeticConversion
 from .basilisk_satellite import BasiliskSatellite
@@ -29,7 +29,7 @@ class BasiliskEnvironment(BaseEnvironment):
         *args,
         standard_time_init: str = TIMESTAMP,
         constellation: Constellation,
-        all_tasks: Taskset,
+        all_tasks: TaskSet,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -102,7 +102,7 @@ class BasiliskEnvironment(BaseEnvironment):
         )
 
     @property
-    def all_tasks(self) -> Taskset:
+    def all_tasks(self) -> TaskSet:
         return self._all_tasks
 
     @property
@@ -135,7 +135,7 @@ class BasiliskEnvironment(BaseEnvironment):
         )
         self._simulator.ExecuteSimulation()
 
-    def is_visible(self, tasks: Taskset) -> torch.Tensor:
+    def is_visible(self, tasks: TaskSet) -> torch.Tensor:
         visibility = torch.zeros(self.num_satellites, len(tasks))
         for satellite_idx, satellite in enumerate(self._satellites):
             for i, task in enumerate(tasks):

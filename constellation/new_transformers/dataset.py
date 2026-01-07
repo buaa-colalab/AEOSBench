@@ -23,7 +23,7 @@ from constellation import (
     TASKSETS_ROOT,
     TRAJECTORIES_ROOT,
 )
-from constellation.data import Constellation, Taskset
+from constellation.data import Constellation, TaskSet
 
 from .registries import ConstellationDatasetRegistry
 
@@ -173,7 +173,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
             TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
             / f'{id_:05}.json'
         )
-        sensor_type, static_data = Taskset.load(str(taskset_path)).to_tensor()
+        sensor_type, static_data = TaskSet.load(str(taskset_path)).to_tensor()
         duration = static_data[..., 2]
 
         sensor_type = einops.repeat(sensor_type, 'nt -> t nt', t=t)

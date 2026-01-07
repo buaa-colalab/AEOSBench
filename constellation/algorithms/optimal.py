@@ -9,7 +9,7 @@ import einops
 import numpy as np
 import torch
 
-from ..data import Action, Actions, Constellation, Taskset
+from ..data import Action, Actions, Constellation, TaskSet
 from ..environments.basilisk.constants import RADIUS_EARTH, eccentricity_2
 from .base import BaseAlgorithm
 from ..task_managers import TaskManager
@@ -48,7 +48,7 @@ class OptimalAlgorithm(BaseAlgorithm):
 
     def get_dispatch(
         self,
-        tasks: Taskset, # ongoing
+        tasks: TaskSet, # ongoing
         constellation: Constellation,
         rotation: torch.Tensor,
     ) -> torch.Tensor:
@@ -118,7 +118,7 @@ class OptimalAlgorithm(BaseAlgorithm):
 
     def step(
         self,
-        tasks: Taskset, # ongoing
+        tasks: TaskSet, # ongoing
         constellation: Constellation,
         rotation: torch.Tensor,
         **kwargs,

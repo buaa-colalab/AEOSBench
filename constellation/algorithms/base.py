@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from ..data import Actions, Constellation, Taskset
+from ..data import Actions, Constellation, TaskSet
 from ..environments import BaseEnvironment, Timer
 from ..task_managers import TaskManager
 
@@ -28,7 +28,7 @@ class BaseAlgorithm(ABC):
     @abstractmethod
     def step(
         self,
-        tasks: Taskset,
+        tasks: TaskSet,
         constellation: Constellation,
         rotation: torch.Tensor,
         constellation_data: torch.Tensor,

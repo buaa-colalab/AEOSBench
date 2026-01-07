@@ -13,7 +13,7 @@ from ..task_managers import TaskManager
 
 from ..constants import STATISTICS_PATH, TRAJECTORIES_ROOT, TASKSETS_ROOT
 
-from ..data import Action, Actions, Constellation, Taskset, Task
+from ..data import Action, Actions, Constellation, TaskSet, Task
 from .base import BaseAlgorithm
 from .base import BaseEnvironment
 
@@ -69,7 +69,7 @@ class ReplayAlgorithm(BaseAlgorithm):
     def _tabu_satellites(
         self,
         constellation: Constellation,
-        tasks: Taskset[Task],
+        tasks: TaskSet[Task],
         relative_task_ids: list[int],
     ) -> list[int]:
         tabu: list[int] = []
@@ -97,7 +97,7 @@ class ReplayAlgorithm(BaseAlgorithm):
             constellation_id: constellation[constellation_id]
             for constellation_id in constellation_ids
         })
-        tasks = Taskset(
+        tasks = TaskSet(
             tasks[relative_task_id] for relative_task_id in relative_task_ids
         )
 
@@ -143,7 +143,7 @@ class ReplayAlgorithm(BaseAlgorithm):
 
     def step(
         self,
-        tasks: Taskset[Task],
+        tasks: TaskSet[Task],
         constellation: Constellation,
         rotation: torch.Tensor,
         **kwargs,

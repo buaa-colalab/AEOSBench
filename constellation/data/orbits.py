@@ -58,23 +58,22 @@ class Orbit:
     def sample(cls, id_: int) -> Self:
         return cls(
             id_,
-            round(random.uniform(0, 0.005), 6),
-            round(random.uniform(6.8e6, 8e6), 1),
-            round(random.uniform(0, 180), 1),
-            round(random.uniform(0, 360), 1),
-            round(random.uniform(0, 360), 1),
+            random.uniform(0, 0.005),
+            random.uniform(6.8e6, 8e6),
+            random.uniform(0, 180),
+            random.uniform(0, 360),
+            random.uniform(0, 360),
         )
 
-    @classmethod
-    def mrp_fit_default(cls, id_: int = 0) -> Self:
-        return cls(
-            id_,
-            0.0001,
-            7200000.0,
-            0.0,
-            0.0,
-            0.0,
-        )
+
+MRP_ORBIT = Orbit(
+    0,
+    0.0001,
+    7200000.0,
+    0.0,
+    0.0,
+    0.0,
+)
 
 
 class Orbits(UserList[Orbit]):

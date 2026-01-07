@@ -12,7 +12,7 @@ from constellation.algorithms import TabuOptimalAlgorithm
 from constellation import ANNOTATIONS_ROOT
 from constellation.algorithms.replay import ReplayAlgorithm
 from constellation.controller import Controller
-from constellation.data import Constellation, Task, Taskset
+from constellation.data import Constellation, Task, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     CompletionRateEvaluator,
@@ -38,7 +38,7 @@ def test(work_dir: pathlib.Path, split: str, i: int) -> list[float] | None:
         todd.logger.info(f'{split=} {i=} already exists')
         return None
 
-    taskset: Taskset[Task] = Taskset.load(str(taskset_path))
+    taskset: TaskSet[Task] = TaskSet.load(str(taskset_path))
     constellation = Constellation.load(str(constellation_path))
 
     result_path.parent.mkdir(parents=True, exist_ok=True)

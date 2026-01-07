@@ -9,7 +9,7 @@ from constellation.new_transformers.dataset import TrajectoryData
 from todd.patches.py_ import json_dump, json_load
 
 from constellation import ANNOTATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
-from constellation.data import Task, Taskset
+from constellation.data import Task, TaskSet
 
 
 def get_tabu_list(failed: set[int], actions: list[int]) -> list[int]:
@@ -53,7 +53,7 @@ def generate_tabu_list(
     trajectory_path = trajectories_root / f'{i // 1000:02}' / f'{i:05}.pth'
     tabu_path = trajectories_root / f'{i // 1000:02}' / f'{i:05}.tabu.json'
 
-    taskset: Taskset[Task] = Taskset.load(str(taskset_path))
+    taskset: TaskSet[Task] = TaskSet.load(str(taskset_path))
     durations = torch.tensor(taskset.durations)
 
     trajectory: TrajectoryData = torch.load(str(trajectory_path))

@@ -37,7 +37,7 @@ from todd.patches.py_ import json_dump, json_load
 from Basilisk.utilities import macros, orbitalMotion
 
 from ..constants import MU_EARTH
-from .orbits import Orbit, OrbitDicts, Orbits
+from .orbits import MRP_ORBIT, Orbit, OrbitDicts, Orbits
 from .visualization import SatelliteDataJson
 
 # TODO: rename properties
@@ -88,6 +88,9 @@ class SolarPanel:
         )
 
 
+MRP_SOLAR_PANEL = SolarPanel.sample()
+
+
 class SensorType(IntEnum):
     VISIBLE = auto()
     NEAR_INFRARED = auto()
@@ -131,6 +134,15 @@ class Sensor:
             random.uniform(1, 10),
         )
 
+    @classmethod
+    def sample_mrp(cls) -> Self:
+        return cls(
+            SensorType.VISIBLE,
+            False,
+            random.uniform(0.5, 1.5),
+            random.uniform(2, 8),
+        )
+
 
 class BatteryDict(TypedDict):
     capacity: float
@@ -160,6 +172,9 @@ class Battery:
             random.uniform(8000, 30000),
             random.uniform(0.1, 1.0),
         )
+
+
+MRP_BATTERY = Battery(3e6, 1.0)
 
 
 class ReactionWheelDict(TypedDict):
@@ -204,6 +219,28 @@ class ReactionWheel:
     def dynamic_data(self) -> list[float]:
         return [self.rw_speed_init]
 
+    @classmethod
+    def sample(cls) -> 'ReactionWheels':
+        type_, max_momentums = random.choice([
+            ('Honeywell_HR12', [12.0, 25.0, 50.0]),
+            ('Honeywell_HR14', [75.0, 25.0, 50.0]),
+            ('Honeywell_HR16', [100.0, 75.0, 50.0]),
+        ])
+        max_momentum = random.choice(max_momentums)
+        return cast(
+            ReactionWheels,
+            tuple(
+                cls(
+                    type_,
+                    tuple(direction),
+                    max_momentum,
+                    random.uniform(400, 750),
+                    random.uniform(5, 7),
+                    random.uniform(0.5, 0.6),
+                ) for direction in torch.eye(3).tolist()
+            ),
+        )
+
 
 ReactionWheels = tuple[ReactionWheel, ReactionWheel, ReactionWheel]
 
@@ -229,6 +266,16 @@ class MRPControl:
     @property
     def data(self) -> list[float]:
         return list(dataclasses.astuple(self))
+
+    @classmethod
+    def sample(cls) -> Self:
+        k = random.uniform(0, 10)
+        return cls(
+            k,
+            random.uniform(0, 0.001),
+            random.uniform(2, 5) * k,
+            random.uniform(0, 0.001),
+        )
 
 
 class SatelliteDict(TypedDict):
@@ -299,113 +346,30 @@ class Satellite:
         return cls(**d)
 
     @classmethod
-    def sample_mrp_fit(
-        cls,
-        id_: int,
-        orbit: Orbit,
-        *,
-        rng: random.Random | None = None,
-    ) -> Self:
-        def uniform(a: float, b: float) -> float:
-            if rng is None:
-                return random.uniform(a, b)
-            return rng.uniform(a, b)
-
-        def choice(seq: list[Any]) -> Any:
-            return (rng.choice(seq) if rng is not None else random.choice(seq))
-
-        inertia: Inertia = (
-            round(uniform(50, 200), 6),
-            0.0,
-            0.0,
-            0.0,
-            round(uniform(50, 200), 6),
-            0.0,
-            0.0,
-            0.0,
-            round(uniform(50, 200), 6),
-        )
-        mass = round(uniform(50, 200), 3)
-
-        while True:
-            direction = np.array([uniform(-1, 1) for _ in range(3)])
-            norm = float(np.linalg.norm(direction))
-            if norm > 1e-6:
-                direction = direction / norm
-                solar_direction = tuple(round(float(x), 3) for x in direction)
-                break
-
-        solar_panel = SolarPanel(
-            solar_direction,  # type: ignore[arg-type]
-            round(uniform(5, 10), 3),
-            round(uniform(0.1, 0.6), 3),
-        )
-        sensor = Sensor(
-            SensorType.VISIBLE,
-            bool(choice([True, False])),
-            round(uniform(0.5, 1.5), 2),
-            round(uniform(2, 8), 3),
-        )
-        battery = Battery(
-            round(uniform(8000, 30000), 1),
-            round(uniform(0.7, 1.0), 3),
-        )
-
-        rw_type = cast(str, choice(['12', '14', '16']))
-        if rw_type == '12':
-            max_momentum = cast(float, choice([12.0, 25.0, 50.0]))
-        elif rw_type == '14':
-            max_momentum = cast(float, choice([75.0, 25.0, 50.0]))
-        else:
-            max_momentum = cast(float, choice([100.0, 75.0, 50.0]))
-
-        reaction_wheels: ReactionWheels = (
-            ReactionWheel(
-                'Honeywell_HR' + rw_type,
-                (1.0, 0.0, 0.0),
-                max_momentum,
-                round(uniform(400, 750), 3),
-                round(uniform(5, 7), 3),
-                round(uniform(0.5, 0.6), 3),
-            ),
-            ReactionWheel(
-                'Honeywell_HR' + rw_type,
-                (0.0, 1.0, 0.0),
-                max_momentum,
-                round(uniform(400, 750), 3),
-                round(uniform(5, 7), 3),
-                round(uniform(0.5, 0.6), 3),
-            ),
-            ReactionWheel(
-                'Honeywell_HR' + rw_type,
-                (0.0, 0.0, 1.0),
-                max_momentum,
-                round(uniform(400, 750), 3),
-                round(uniform(5, 7), 3),
-                round(uniform(0.5, 0.6), 3),
+    def sample_mrp(cls) -> Self:
+        inertia = cast(
+            Inertia,
+            tuple(
+                torch.distributions.Uniform(50, 200)\
+                    .sample((3, ))\
+                    .diag()\
+                    .flatten()\
+                    .tolist()
             ),
         )
-
-        mrp_k = uniform(0, 10)
-        mrp_control = MRPControl(
-            round(mrp_k, 6),
-            round(uniform(0, 0.001), 6),
-            round(uniform(2, 5) * mrp_k, 6),
-            round(uniform(0, 0.001), 6),
-        )
-
+        mass = random.uniform(50, 200)
         return cls(
-            id_,
+            0,
             inertia,
             mass,
             (0.0, 0.0, 0.0),
-            orbit.id_,
-            orbit,
-            solar_panel,
-            sensor,
-            battery,
-            reaction_wheels,
-            mrp_control,
+            MRP_ORBIT.id_,
+            MRP_ORBIT,
+            MRP_SOLAR_PANEL,
+            Sensor.sample_mrp(),
+            MRP_BATTERY,
+            ReactionWheel.sample(),
+            MRPControl.sample(),
             0.0,
             (0.0, 0.0, 0.0),
         )
@@ -516,23 +480,13 @@ class Constellation(UserDict[int, Satellite]):
     def dump(self, f: Any) -> None:
         json_dump(self.to_dict(), f)
 
-    def dump_std_json(self, f: Any, *, indent: int = 4) -> None:
-        json.dump(self.to_dict(), f, indent=indent, default=int)
-
     @classmethod
     def load(cls, f: Any) -> Self:
         return cls.from_dict(json_load(f))
 
     @classmethod
-    def sample_mrp_fit_single(
-        cls,
-        *,
-        orbit: Orbit | None = None,
-        satellite_id: int = 0,
-        rng: random.Random | None = None,
-    ) -> Self:
-        orbit = Orbit.mrp_fit_default(0) if orbit is None else orbit
-        satellite = Satellite.sample_mrp_fit(satellite_id, orbit, rng=rng)
+    def sample_mrp(cls) -> Self:
+        satellite = Satellite.sample_mrp()
         return cls({satellite.id_: satellite})
 
     def static_to_tensor(self) -> tuple[torch.Tensor, torch.Tensor]:

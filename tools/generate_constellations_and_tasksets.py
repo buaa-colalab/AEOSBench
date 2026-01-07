@@ -11,7 +11,7 @@ from constellation.data import (
     Satellite,
     Sensor,
     SolarPanel,
-    Taskset,
+    TaskSet,
 )
 
 
@@ -71,7 +71,7 @@ def generate(split: str, n: int) -> None:
 
         taskset_path = tasks_root / f'{i // 1000:02}'
         taskset_path.mkdir(parents=True, exist_ok=True)
-        Taskset.sample(random.randint(50, 300))\
+        TaskSet.sample(random.randint(50, 300))\
             .dump(str(taskset_path / f'{i:05}.json'))
 
 
