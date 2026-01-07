@@ -1,8 +1,8 @@
 import argparse
+import os
+import pathlib
 
 import todd
-import torch.distributed as dist
-from todd.patches.torch import get_rank, get_world_size
 from todd.utils import init_seed
 
 from constellation import (
@@ -16,44 +16,37 @@ from constellation.data import Constellation, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import CompletionRateEvaluator
 
+RANK = int(os.environ['RANK'])
+WORLD_SIZE = int(os.environ['WORLD_SIZE'])
+
+TASKSET_PATH = TASKSETS_ROOT / 'mrp.json'
+TASKSET = TaskSet.load(str(TASKSET_PATH))
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--taskset-size", type=int, default=36)
-    parser.add_argument("--num-samples", type=int, default=1000)
-    parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--threshold', type=float, default=0.5)
     args = parser.parse_args()
     return args
 
 
-def main() -> None:
-    args = parse_args()
+def generate_satellites(
+    split: str,
+    n: int,
+    threshold: float,
+) -> None:
+    satellites_root: pathlib.Path = SATELLITES_ROOT / split
+    if RANK == 0:
+        satellites_root.mkdir(parents=True, exist_ok=True)
 
-    dist.init_process_group()
-    rank = get_rank()
-    world_size = get_world_size()
-
-    init_seed(args.seed + rank)
-
-    if rank == 0:
-        TASKSETS_ROOT.mkdir(parents=True, exist_ok=True)
-        SATELLITES_ROOT.mkdir(parents=True, exist_ok=True)
-
-    taskset_path = TASKSETS_ROOT / 'mrp.json'
-    if rank == 0 and not taskset_path.exists():
-        todd.logger.info("Generating MRP taskset")
-        TaskSet.sample_mrp(args.taskset_size).dump(str(taskset_path))
-    dist.barrier()
-    taskset = TaskSet.load(str(taskset_path))
-
-    for i in range(rank, args.num_samples, world_size):
+    for i in range(RANK, n, WORLD_SIZE):
         constellation = Constellation.sample_mrp()
         environment = BasiliskEnvironment(
             constellation=constellation,
-            all_tasks=taskset,
+            all_tasks=TASKSET,
         )
-        task_manager = TaskManager(timer=environment.timer, tasks=taskset)
+        task_manager = TaskManager(timer=environment.timer, tasks=TASKSET)
         algorithm = OptimalAlgorithm(timer=environment.timer)
         algorithm.prepare(environment, task_manager)
         controller = Controller(
@@ -65,14 +58,21 @@ def main() -> None:
         try:
             metrics = controller.run(0, algorithm, progress_bar=False)
         except Exception as e:
-            todd.logger.error("rank %d failed %d: %s", rank, i, e)
+            todd.logger.error("rank %d failed %d: %s", RANK, i, e)
             continue
 
-        todd.logger.info("rank %d finished %d with %s", rank, i, metrics['CR'])
-        if metrics['CR'] > args.threshold:
-            constellation.dump(str(SATELLITES_ROOT / f'{i}.json'))
+        todd.logger.info("rank %d finished %d with %s", RANK, i, metrics['CR'])
+        if metrics['CR'] > threshold:
+            constellation.dump(str(satellites_root / f'{i}.json'))
 
-    dist.destroy_process_group()
+
+def main() -> None:
+    args = parse_args()
+
+    init_seed(args.seed + RANK)
+
+    generate_satellites('train', 10_000, args.threshold)
+    generate_satellites('val_unseen', 2_000, args.threshold)
 
 
 if __name__ == "__main__":

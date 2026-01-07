@@ -5,43 +5,10 @@ from tqdm import tqdm, trange
 
 from constellation import CONSTELLATIONS_ROOT, SATELLITES_ROOT, TASKSETS_ROOT
 from constellation.data import (
-    Battery,
     Constellation,
-    Orbit,
     Satellite,
-    Sensor,
-    SolarPanel,
     TaskSet,
 )
-
-
-def generate_satellite(id_: int, satellite: Satellite) -> Satellite:
-    return Satellite(
-        id_,
-        satellite.inertia,
-        satellite.mass,
-        satellite.center_of_mass,
-        id_,
-        Orbit.sample(id_),
-        SolarPanel.sample(),
-        Sensor.sample(),
-        Battery.sample(),
-        satellite.reaction_wheels,
-        satellite.mrp_control,
-        random.uniform(0, 360),
-        (0., 0., 0.),
-    )
-
-
-def generate_constellation(
-    satellites: list[Satellite],
-    n: int,
-) -> Constellation:
-    satellites = random.sample(satellites, n)
-    return Constellation({
-        i: generate_satellite(i, satellite)
-        for i, satellite in enumerate(satellites)
-    })
 
 
 def generate(split: str, n: int) -> None:
@@ -66,7 +33,7 @@ def generate(split: str, n: int) -> None:
     for i in trange(n):
         constellation_path = constellations_root / f'{i // 1000:02}'
         constellation_path.mkdir(parents=True, exist_ok=True)
-        generate_constellation(satellites, random.randint(1, 50))\
+        Constellation.sample(satellites, random.randint(1, 50))\
             .dump(str(constellation_path / f'{i:05}.json'))
 
         taskset_path = tasks_root / f'{i // 1000:02}'

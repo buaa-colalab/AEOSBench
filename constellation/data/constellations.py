@@ -346,6 +346,24 @@ class Satellite:
         return cls(**d)
 
     @classmethod
+    def sample(cls, id_: int, satellite: Self) -> Self:
+        return cls(
+            id_,
+            satellite.inertia,
+            satellite.mass,
+            satellite.center_of_mass,
+            id_,
+            Orbit.sample(id_),
+            SolarPanel.sample(),
+            Sensor.sample(),
+            Battery.sample(),
+            satellite.reaction_wheels,
+            satellite.mrp_control,
+            random.uniform(0, 360),
+            (0., 0., 0.),
+        )
+
+    @classmethod
     def sample_mrp(cls) -> Self:
         inertia = cast(
             Inertia,
@@ -483,6 +501,14 @@ class Constellation(UserDict[int, Satellite]):
     @classmethod
     def load(cls, f: Any) -> Self:
         return cls.from_dict(json_load(f))
+
+    @classmethod
+    def sample(cls, satellites: Satellites, n: int) -> Self:
+        sampled_satellites = random.sample(satellites, n)
+        return cls({
+            i: Satellite.sample(i, satellite)
+            for i, satellite in enumerate(sampled_satellites)
+        })
 
     @classmethod
     def sample_mrp(cls) -> Self:

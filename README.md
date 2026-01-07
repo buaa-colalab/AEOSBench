@@ -8,13 +8,18 @@ This repository is the official implementation of "Towards Realistic Earth-Obser
 ## Installation
 
 ```bash
+sudo apt install ffmpeg
 bash setup.sh
 ```
 
 ## pre-steps
 
 ```bash
-PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 2 tools/generate_satellites.py
+PYTHONPATH=:${PYTHONPATH} python tools/generate_mrp_taskset.py
+PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 32 tools/generate_satellites.py
+ln -s ${PWD}/data/satellites/train data/satellites/val_seen
+# download test split
+
 PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
 
 # train transformer model
