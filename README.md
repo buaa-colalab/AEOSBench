@@ -8,19 +8,17 @@ This repository is the official implementation of "Towards Realistic Earth-Obser
 ## Installation
 
 ```bash
-sudo apt install ffmpeg
+sudo apt install ffmpeg libpq-dev
 bash setup.sh
 ```
 
 ## pre-steps
 
 ```bash
-PYTHONPATH=:${PYTHONPATH} python tools/generate_mrp_taskset.py
-PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 32 tools/generate_satellites.py
-ln -s ${PWD}/data/satellites/train data/satellites/val_seen
-# download test split
-
+bash tools/generate_satellites.sh
 PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
+
+PYTHONPATH=:${PYTHONPATH} python tools/patch_constellations.py
 
 # train transformer model
 CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train refactor_test constellation/new_transformers/config.py
@@ -46,11 +44,6 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=1 RANK=0 python -m constellation.rl.eval_all \
 ## Data
 
 ```bash
-ln -s ${PWD}/data/satellites/train data/satellites/val_seen
-
-PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
-PYTHONPATH=:${PYTHONPATH} python tools/patch_constellations.py
-
 PYTHONPATH=:${PYTHONPATH} python tools/generate_trajectories.py 400
 PYTHONPATH=:${PYTHONPATH} python tools/generate_annotations.py
 PYTHONPATH=:${PYTHONPATH} python tools/generate_tabu_lists.py 400

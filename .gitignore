@@ -162,7 +162,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-/data
+/data/*
+!/data/orbits.zip
+
 /tensorboards
 /work_dirs
 /tools/mrp_fit/sats

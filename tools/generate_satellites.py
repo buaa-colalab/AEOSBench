@@ -3,7 +3,6 @@ import os
 import pathlib
 
 import todd
-from todd.utils import init_seed
 
 from constellation import (
     SATELLITES_ROOT,
@@ -25,7 +24,6 @@ TASKSET = TaskSet.load(str(TASKSET_PATH))
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--threshold', type=float, default=0.5)
     args = parser.parse_args()
     return args
@@ -37,10 +35,15 @@ def generate_satellites(
     threshold: float,
 ) -> None:
     satellites_root: pathlib.Path = SATELLITES_ROOT / split
-    if RANK == 0:
-        satellites_root.mkdir(parents=True, exist_ok=True)
+    max_id = max(
+        [int(satellite_path.stem) for satellite_path in satellites_root.iterdir()],
+        default=-1,
+    )
 
     for i in range(RANK, n, WORLD_SIZE):
+        if i <= max_id:
+            continue
+
         constellation = Constellation.sample_mrp()
         environment = BasiliskEnvironment(
             constellation=constellation,
@@ -69,10 +72,9 @@ def generate_satellites(
 def main() -> None:
     args = parse_args()
 
-    init_seed(args.seed + RANK)
-
     generate_satellites('train', 10_000, args.threshold)
     generate_satellites('val_unseen', 2_000, args.threshold)
+    generate_satellites('test', 2_000, args.threshold)
 
 
 if __name__ == "__main__":
