@@ -52,7 +52,7 @@ def main():
             _, dispatch_ids = algorithm.step(
                 tasks=task_manager.ongoing_tasks,
                 constellation=environment.get_constellation(),
-                rotation=torch.tensor(environment.get_earth_rotation()),
+                earth_rotation=environment.get_earth_rotation(),
             )
 
             action = np.array(dispatch_ids, dtype=np.int32)

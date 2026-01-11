@@ -18,6 +18,7 @@ bash setup.sh
 bash tools/generate_satellites.sh
 PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
 
+unzip -q data/orbits.zip -d data
 PYTHONPATH=:${PYTHONPATH} python tools/patch_constellations.py
 
 # train transformer model

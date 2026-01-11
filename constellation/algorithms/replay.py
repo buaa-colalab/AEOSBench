@@ -145,8 +145,7 @@ class ReplayAlgorithm(BaseAlgorithm):
         self,
         tasks: TaskSet[Task],
         constellation: Constellation,
-        rotation: torch.Tensor,
-        **kwargs,
+        earth_rotation: torch.Tensor,
     ) -> tuple[Actions, list[int]]:
         if self._timer.time % 10 == 0:
             self._tabu_cache = dict()

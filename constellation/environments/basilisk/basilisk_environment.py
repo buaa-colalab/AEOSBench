@@ -153,9 +153,3 @@ class BasiliskEnvironment(BaseEnvironment):
         rotation = earth_state_message.read().J20002Pfix
         rotation = torch.tensor(rotation)
         return rotation
-
-    def get_sat_eci_location(self) -> torch.Tensor:
-        return torch.tensor(
-            self.get_constellation().eci_locations,
-            dtype=torch.float,
-        )

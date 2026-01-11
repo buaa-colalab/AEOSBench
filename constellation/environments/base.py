@@ -3,11 +3,8 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
-from typing import Callable, Generator
 
 import torch
-
-from ..constants import MAX_TIME_STEP
 
 from ..data import Actions, Constellation, TaskSet
 from .timer import Timer
@@ -58,9 +55,5 @@ class BaseEnvironment(ABC):
         pass
 
     @abstractmethod
-    def get_earth_rotation(self) -> list[float]:
-        pass
-
-    @abstractmethod
-    def get_sat_eci_location(self) -> torch.Tensor:
+    def get_earth_rotation(self) -> torch.Tensor:
         pass

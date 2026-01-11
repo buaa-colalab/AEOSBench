@@ -68,7 +68,7 @@ class Controller:
             actions, dispatch_ids = algorithm.step(
                 tasks=self._task_manager.ongoing_tasks,
                 constellation=self._environment.get_constellation(),
-                rotation=self._environment.get_earth_rotation(),
+                earth_rotation=self._environment.get_earth_rotation(),
             )
 
             self.step(actions, dispatch_ids)

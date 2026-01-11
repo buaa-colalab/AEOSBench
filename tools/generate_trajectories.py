@@ -35,6 +35,7 @@ def generate_trajectory(
     constellation_path = CONSTELLATIONS_ROOT / path
     tasks_path = TASKSETS_ROOT / path
     trajectory_path = TRAJECTORIES_ROOT / path
+    trajectory_path.parent.mkdir(parents=True, exist_ok=True)
 
     if trajectory_path.exists():
         metrics = json_load(str(trajectory_path))
@@ -51,40 +52,33 @@ def generate_trajectory(
             todd.logger.info(f'{split=} {i=} tabu path not exists')
             return None
 
-    taskset: TaskSet[Task] = TaskSet.load(str(tasks_path))
+    taskset = TaskSet.load(str(tasks_path))
     constellation = Constellation.load(str(constellation_path))
-
-    trajectory_path.parent.mkdir(parents=True, exist_ok=True)
 
     environment = BasiliskEnvironment(
         constellation=constellation,
         all_tasks=taskset,
     )
     algorithm = OptimalAlgorithm(timer=environment.timer)
-    e0 = CompletionRateEvaluator()
-    e1 = PCompletionRateEvaluator()
-    e2 = WCompletionRateEvaluator()
-    e3 = WPCompletionRateEvaluator()
-    et = TurnAroundTimeEvaluator()
-    ep = PowerEvaluator()
-    evaluators = [e0, e1, e2, e3, et, ep]
 
-    work_dir = TRAJECTORIES_ROOT / f'{split}/{i // 1000:02}'
-    l0 = VisualizationLogger(work_dir=work_dir)
-    l1 = PthLogger(work_dir=work_dir)
-    loggers = [l1]
-
-    callbacks = [*evaluators, *loggers]
+    callbacks = [
+        CompletionRateEvaluator(),
+        PCompletionRateEvaluator(),
+        WCompletionRateEvaluator(),
+        WPCompletionRateEvaluator(),
+        TurnAroundTimeEvaluator(),
+        PowerEvaluator(),
+        PthLogger(work_dir=trajectory_path.parent),
+    ]
     task_manager = TaskManager(timer=environment.timer, tasks=taskset)
     algorithm.prepare(environment=environment, task_manager=task_manager)
     controller = Controller(
         environment=environment,
-        algorithm=algorithm,
         task_manager=task_manager,
         callbacks=callbacks,
     )
 
-    metrics = controller.run(max_time_step=3600, ordinal=i)
+    metrics = controller.run(i, algorithm)
 
     json_dump(metrics, str(trajectory_path))
 

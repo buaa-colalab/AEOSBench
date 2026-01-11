@@ -30,7 +30,6 @@ class BaseAlgorithm(ABC):
         self,
         tasks: TaskSet,
         constellation: Constellation,
-        rotation: torch.Tensor,
-        constellation_data: torch.Tensor,
+        earth_rotation: torch.Tensor,
     ) -> tuple[Actions, list[int]]:
         pass

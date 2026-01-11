@@ -2,9 +2,7 @@ __all__ = [
     'OptimalAlgorithm',
 ]
 
-from asyncio import all_tasks
 import math
-import select
 import einops
 import numpy as np
 import torch
@@ -14,22 +12,16 @@ from ..environments.basilisk.constants import RADIUS_EARTH, eccentricity_2
 from .base import BaseAlgorithm
 from ..task_managers import TaskManager
 from ..environments import BaseEnvironment
-from ..environments.geodetics import GeodeticConversion
-from .calcutils import (
-    include_angle,
-)
-from constellation import task_managers
 
 MAX_VISIBILITY_ANGLE = np.pi / 3  # 60 degrees
-MAX_DISTANCE_THRESHOLD = 1500000  # meters
 
 
 class OptimalAlgorithm(BaseAlgorithm):
 
     def prepare(
         self,
-        environment: BaseEnvironment,  # readonly
-        task_manager: TaskManager,  # readonly
+        environment: BaseEnvironment,
+        task_manager: TaskManager,
     ) -> None:
         self.environment = environment
         self.task_manager = task_manager
@@ -48,11 +40,11 @@ class OptimalAlgorithm(BaseAlgorithm):
 
     def get_dispatch(
         self,
-        tasks: TaskSet, # ongoing
+        tasks: TaskSet,  # ongoing
         constellation: Constellation,
-        rotation: torch.Tensor,
+        earth_rotation: torch.Tensor,
     ) -> torch.Tensor:
-        rotation_matrix = rotation.T
+        rotation_matrix = earth_rotation.T
         satellites_eci = constellation.eci_locations  # dtype:float
 
         num_satellites = len(constellation)
@@ -118,10 +110,9 @@ class OptimalAlgorithm(BaseAlgorithm):
 
     def step(
         self,
-        tasks: TaskSet, # ongoing
+        tasks: TaskSet,  # ongoing
         constellation: Constellation,
-        rotation: torch.Tensor,
-        **kwargs,
+        earth_rotation: torch.Tensor,
     ) -> tuple[Actions, list[int]]:
 
         num_satellites = len(constellation)
@@ -138,7 +129,7 @@ class OptimalAlgorithm(BaseAlgorithm):
         dispatch = self.get_dispatch(
             tasks,
             constellation,
-            rotation,
+            earth_rotation,
         )
 
         actions = Actions(
@@ -147,7 +138,7 @@ class OptimalAlgorithm(BaseAlgorithm):
                 target_location=(
                     self.task_manager.all_tasks[idx].coordinate if idx !=
                     -1 else None
-                )
+                ),
             ) for idx in dispatch
         )
 

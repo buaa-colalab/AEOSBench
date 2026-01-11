@@ -31,13 +31,16 @@ def generate_constellations_and_tasksets(split: str, n: int) -> None:
         constellation_path = (
             constellations_root / f'{i // 1000:02}' / f'{i:05}.json'
         )
-        constellation_path.parent.mkdir(parents=True, exist_ok=True)
-        constellation = Constellation.sample(satellites, random.randint(1, 50))
-        constellation.dump(str(constellation_path))
+        if not constellation_path.exists():
+            constellation_path.parent.mkdir(parents=True, exist_ok=True)
+            constellation = Constellation.sample(satellites, random.randint(1, 50))
+            constellation.dump(str(constellation_path))
 
         taskset_path = tasks_root / f'{i // 1000:02}' / f'{i:05}.json'
-        taskset_path.parent.mkdir(parents=True, exist_ok=True)
-        TaskSet.sample(random.randint(50, 300)).dump(str(taskset_path))
+        if not taskset_path.exists():
+            taskset_path.parent.mkdir(parents=True, exist_ok=True)
+            taskset = TaskSet.sample(random.randint(50, 300))
+            taskset.dump(str(taskset_path))
 
 
 def main() -> None:
