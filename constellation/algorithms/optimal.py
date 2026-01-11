@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from ..data import Action, Actions, Constellation, TaskSet
-from ..environments.basilisk.constants import RADIUS_EARTH, eccentricity_2
+from ..constants import RADIUS_EARTH
 from .base import BaseAlgorithm
 from ..task_managers import TaskManager
 from ..environments import BaseEnvironment
@@ -44,32 +44,11 @@ class OptimalAlgorithm(BaseAlgorithm):
         constellation: Constellation,
         earth_rotation: torch.Tensor,
     ) -> torch.Tensor:
-        rotation_matrix = earth_rotation.T
         satellites_eci = constellation.eci_locations  # dtype:float
 
         num_satellites = len(constellation)
 
-        task_latitude = torch.tensor([task.coordinate.x
-                                      for task in tasks]).deg2rad()
-        task_longitude = torch.tensor([task.coordinate.y
-                                       for task in tasks]).deg2rad()
-        task_altitude = torch.zeros(len(tasks))
-
-        sin_lat = task_latitude.sin()
-        cos_lat = task_latitude.cos()
-        sin_lon = task_longitude.sin()
-        cos_lon = task_longitude.cos()
-
-        # N is the prime vertical radius of curvature
-        n = RADIUS_EARTH / torch.sqrt(1.0 - eccentricity_2 * sin_lat**2)
-
-        task_ecef = torch.stack([
-            (n + task_altitude) * cos_lat * cos_lon,
-            (n + task_altitude) * cos_lat * sin_lon,
-            ((1.0 - eccentricity_2) * n + task_altitude) * sin_lat,
-        ])
-
-        task_eci = task_ecef.T @ rotation_matrix.T
+        task_eci = torch.tensor(tasks.coordinates_ecef) @ earth_rotation
 
         r_satellite_task = (
             einops.rearrange(task_eci, 'nt three -> 1 nt three')

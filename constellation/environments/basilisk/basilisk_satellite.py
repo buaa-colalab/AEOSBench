@@ -45,7 +45,8 @@ from ...data import (
     SolarPanel,
 )
 from ...data.constellations import SensorType
-from .constants import IDENTITY_MATRIX_3, MU_EARTH, RADIUS_EARTH, UNIT_VECTOR_Z
+from .constants import IDENTITY_MATRIX_3, UNIT_VECTOR_Z
+from ...constants import MU_EARTH, RADIUS_EARTH
 
 
 class BasiliskSatellite:

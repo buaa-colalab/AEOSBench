@@ -4,7 +4,7 @@ __all__ = [
 
 import math
 
-from .basilisk.constants import RADIUS_EARTH
+from ..constants import RADIUS_EARTH
 
 
 class GeodeticConversion:

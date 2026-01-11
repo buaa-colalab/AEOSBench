@@ -112,7 +112,7 @@ def main() -> None:
 
     tasks: TaskSet = TaskSet.load('data/tasksets/test/00/00000.json')
     constellation = Constellation.load(
-        'data/constellations/test/00/00000.json'
+        'data/constellations/test/00/00003.json'
     )
     time_string = '20190101000000'
     environment = BasiliskEnvironment(
@@ -125,18 +125,20 @@ def main() -> None:
     algorithm = OptimalAlgorithm(timer=environment.timer)
     algorithm.prepare(environment, task_manager)
 
-    e0 = CompletionRateEvaluator()
-    e1 = PCompletionRateEvaluator()
-    e2 = WCompletionRateEvaluator()
-    e3 = WPCompletionRateEvaluator()
-    et = TurnAroundTimeEvaluator()
-    ep = PowerEvaluator()
-    evaluators = [e0, e1, e2, e3, et, ep]
+    evaluators = [
+        CompletionRateEvaluator(),
+        PCompletionRateEvaluator(),
+        WCompletionRateEvaluator(),
+        WPCompletionRateEvaluator(),
+        # TurnAroundTimeEvaluator(),
+        PowerEvaluator(),
+    ]
 
     work_dir = Path('work_dirs') / pathlib.Path("new_exp")
-    l0 = VisualizationLogger(work_dir=work_dir)
-    l1 = PthLogger(work_dir=work_dir)
-    loggers = [l0, l1]
+    loggers = [
+        # VisualizationLogger(work_dir=work_dir),
+        # PthLogger(work_dir=work_dir),
+    ]
 
     callbacks = [*evaluators, *loggers]
 

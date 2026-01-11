@@ -7,22 +7,29 @@ __all__ = [
 ]
 
 import dataclasses
+from functools import cached_property
+import math
 import random
-from itertools import starmap
 from collections import UserList
-from typing import Any, Iterable, NamedTuple, TypedDict, TypeVar, cast
+from typing import Any, NamedTuple, TypedDict, cast
 from typing_extensions import Self
 
 import torch
 from todd.patches.py_ import json_dump, json_load
 
-from ..constants import MAX_TIME_STEP
+from ..constants import MAX_TIME_STEP, RADIUS_EARTH, ECCENTRICITY_EARTH, MU_EARTH
 from .constellations import SensorType
 
 
 class Coordinate(NamedTuple):
     x: float  # latitude
     y: float  # longitude
+
+
+class CoordinateECEF(NamedTuple):
+    x: float
+    y: float
+    z: float
 
 
 class TaskDict(TypedDict):
@@ -45,6 +52,23 @@ class Task:
     duration: int
     coordinate: Coordinate
     sensor_type: SensorType
+
+    @cached_property
+    def coordinate_ecef(self) -> CoordinateECEF:
+        latitude = math.radians(self.coordinate.x)
+        longitude = math.radians(self.coordinate.y)
+        altitude = 0.
+
+        # N is the prime vertical radius of curvature
+        n = RADIUS_EARTH / math.sqrt(
+            1.0 - ECCENTRICITY_EARTH * math.sin(latitude)**2,
+        )
+
+        return CoordinateECEF(
+            (n + altitude) * math.cos(latitude) * math.cos(longitude),
+            (n + altitude) * math.cos(latitude) * math.sin(longitude),
+            ((1.0 - ECCENTRICITY_EARTH) * n + altitude) * math.sin(latitude),
+        )
 
     def to_dict(self) -> TaskDict:
         d = dataclasses.asdict(self)
@@ -109,6 +133,10 @@ class TaskSet(UserList[Task]):
     @property
     def durations(self) -> list[int]:
         return [task.duration for task in self]
+
+    @property
+    def coordinates_ecef(self) -> list[CoordinateECEF]:
+        return [task.coordinate_ecef for task in self]
 
     def to_dicts(self) -> TaskDicts:
         return [task.to_dict() for task in self]

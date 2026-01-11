@@ -18,7 +18,7 @@ from ...data import Actions, Constellation, TaskSet
 from ..base import BaseEnvironment
 from ..geodetics import GeodeticConversion
 from .basilisk_satellite import BasiliskSatellite
-from .constants import RADIUS_EARTH
+from ...constants import RADIUS_EARTH
 from .time import datetime2basilisk, str2datetime
 
 

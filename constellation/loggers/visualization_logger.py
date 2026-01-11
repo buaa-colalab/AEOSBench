@@ -11,7 +11,7 @@ from ..environments.base import BaseEnvironment
 
 from ..constants import INTERVAL, TIMESTAMP
 from ..data.constellations import Constellation
-from ..environments.basilisk.constants import RADIUS_EARTH
+from ..constants import RADIUS_EARTH
 from ..environments.geodetics import GeodeticConversion
 from ..data import (
     InitDataJson,
