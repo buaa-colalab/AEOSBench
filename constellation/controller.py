@@ -113,6 +113,7 @@ def main() -> None:
     tasks: TaskSet = TaskSet.load('data/tasksets/test/00/00000.json')
     constellation = Constellation.load(
         'data/constellations/test/00/00003.json'
+        # 'data/constellations/test/00/00000.json'
     )
     time_string = '20190101000000'
     environment = BasiliskEnvironment(

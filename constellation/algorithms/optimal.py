@@ -4,16 +4,13 @@ __all__ = [
 
 import math
 import einops
-import numpy as np
 import torch
 
 from ..data import Action, Actions, Constellation, TaskSet
-from ..constants import RADIUS_EARTH
+from ..constants import RADIUS_EARTH, MAX_OFF_NADIR_ANGLE
 from .base import BaseAlgorithm
 from ..task_managers import TaskManager
 from ..environments import BaseEnvironment
-
-MAX_VISIBILITY_ANGLE = np.pi / 3  # 60 degrees
 
 
 class OptimalAlgorithm(BaseAlgorithm):
@@ -23,69 +20,85 @@ class OptimalAlgorithm(BaseAlgorithm):
         environment: BaseEnvironment,
         task_manager: TaskManager,
     ) -> None:
-        self.environment = environment
-        self.task_manager = task_manager
-        self.last_task = torch.tensor(
-            [0 for _ in range(self.environment.num_satellites)],
+        self.previous_assignment = torch.full(
+            (environment.num_satellites, ),
+            -1,
             dtype=torch.int,
         )
-        self.choose_mask = torch.tensor(
-            [False for _ in range(self.environment.num_satellites)],
-            dtype=torch.bool,
-        )
-        self.output_mask = torch.tensor(
-            [False for _ in range(self.environment.num_satellites)],
-            dtype=torch.bool,
-        )
+
+    @property
+    def previous_assignment(self) -> torch.Tensor:
+        return self.get_buffer('_previous_assignment')
+
+    @previous_assignment.setter
+    def previous_assignment(self, value: torch.Tensor) -> None:
+        self.register_buffer('_previous_assignment', value)
+
+    def _check_constraints(
+        self,
+        distance: torch.Tensor,
+        orbital_radius: torch.Tensor,
+    ) -> torch.Tensor:
+        mask_distance = distance < RADIUS_EARTH
+        cosine = ((distance**2 + orbital_radius**2 - RADIUS_EARTH**2) /
+                  (2 * distance * orbital_radius))
+        mask_cosine = cosine > math.cos(MAX_OFF_NADIR_ANGLE)
+        return mask_distance & mask_cosine
 
     def get_dispatch(
         self,
-        tasks: TaskSet,  # ongoing
+        taskset: TaskSet,  # ongoing
         constellation: Constellation,
         earth_rotation: torch.Tensor,
     ) -> torch.Tensor:
-        satellites_eci = constellation.eci_locations  # dtype:float
+        taskset_eci = (
+            earth_rotation.new_tensor(taskset.coordinates_ecef)
+            @ earth_rotation
+        )
+        constellation_eci = constellation.coordinates_eci  # dtype:float
 
-        num_satellites = len(constellation)
+        satellite_task_distance = torch.norm(
+            einops.rearrange(taskset_eci, 'nt three -> 1 nt three')
+            - einops.rearrange(constellation_eci, 'ns three -> ns 1 three'),
+            dim=2,
+        )
+        orbital_radius = constellation_eci.norm(dim=1)
 
-        task_eci = torch.tensor(tasks.coordinates_ecef) @ earth_rotation
-
-        r_satellite_task = (
-            einops.rearrange(task_eci, 'nt three -> 1 nt three')
-            - einops.rearrange(satellites_eci, 'ns three -> ns 1 three')
+        greedy_distance, greedy_task_indices = (
+            satellite_task_distance.min(dim=1)
+        )
+        greedy_valid_mask = self._check_constraints(
+            greedy_distance,
+            orbital_radius,
         )
 
-        distance = torch.full(
-            (num_satellites, self.task_manager.num_all_tasks),
-            float('inf'),
-        )
-        distance[:, self.task_manager.ongoing_flags] = \
-            r_satellite_task.norm(dim=2)
-
-        assignment = torch.argmin(distance, 1)
-
-        combined_distances = torch.cat([
-            distance[torch.arange(num_satellites), self.last_task],
-            distance[torch.arange(num_satellites), assignment],
+        previous_assignment = self.previous_assignment[greedy_valid_mask]
+        task_ids = previous_assignment.new_tensor([
+            task.id_ for task in taskset
         ])
 
-        combined_r_satellite = einops.repeat(
-            satellites_eci.norm(dim=1), "ns -> (two ns)", two=2
+        restorable_mask, restorable_task_indices = torch.max(
+            einops.rearrange(previous_assignment, 'ns -> ns 1') ==
+            einops.rearrange(task_ids, 'nt -> 1 nt'),
+            dim=1,
+        )
+        restorable_task_indices = restorable_task_indices[restorable_mask]
+        restorable_distance = satellite_task_distance[greedy_valid_mask]\
+            [restorable_mask, restorable_task_indices]
+        restorable_valid_mask = self._check_constraints(
+            restorable_distance,
+            orbital_radius[greedy_valid_mask][restorable_mask],
         )
 
-        # law of cosines
-        combined_cosine = ((
-            combined_distances**2 + combined_r_satellite**2 - RADIUS_EARTH**2
-        ) / (2 * combined_distances * combined_r_satellite))
+        task_indices = greedy_task_indices.clone()
+        task_indices[greedy_valid_mask][restorable_mask][restorable_valid_mask] = restorable_task_indices  # noqa: E501 yapf: disable
 
-        distance_mask = (combined_cosine > math.cos(MAX_VISIBILITY_ANGLE)
-                         ) & (combined_distances < RADIUS_EARTH)
+        assignment = torch.where(greedy_valid_mask, task_ids[task_indices], -1)
+        self.previous_assignment = assignment
 
-        last_mask, mask = distance_mask.chunk(2)
+        task_indices = torch.where(greedy_valid_mask, task_indices, -1)
 
-        final_dispatch = torch.where(last_mask, self.last_task, assignment)
-        self.last_task = final_dispatch
-        return torch.where(last_mask | mask, final_dispatch, -1)
+        return assignment, task_indices
 
     def step(
         self,
@@ -105,7 +118,7 @@ class OptimalAlgorithm(BaseAlgorithm):
                 for _ in range(num_satellites)
             ), [-1 for _ in range(num_satellites)]
 
-        dispatch = self.get_dispatch(
+        dispatch, task_indices = self.get_dispatch(
             tasks,
             constellation,
             earth_rotation,
@@ -115,10 +128,9 @@ class OptimalAlgorithm(BaseAlgorithm):
             Action(
                 toggle=toggle_imaging,
                 target_location=(
-                    self.task_manager.all_tasks[idx].coordinate if idx !=
-                    -1 else None
+                    None if task_index == -1 else tasks[task_index].coordinate
                 ),
-            ) for idx in dispatch
+            ) for task_index in task_indices
         )
 
         return actions, dispatch.tolist()

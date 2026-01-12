@@ -10,8 +10,13 @@ __all__ = [
     'TASKSETS_ROOT',
     'TRAJECTORIES_ROOT',
     'STATISTICS_PATH',
+    'RADIUS_EARTH',
+    'ECCENTRICITY_EARTH',
+    'MU_EARTH',
+    'MAX_OFF_NADIR_ANGLE',
 ]
 
+import math
 import pathlib
 
 TIMESTAMP = '20190101000000'
@@ -33,3 +38,5 @@ STATISTICS_PATH = DATA_ROOT / 'statistics_new.pth'
 RADIUS_EARTH = 6378136.6  # in m
 MU_EARTH = 398600436000000.0  # in m^3/s^2
 ECCENTRICITY_EARTH = 0.0  # TODO
+
+MAX_OFF_NADIR_ANGLE = math.pi / 3  # 60 degrees

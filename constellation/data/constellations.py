@@ -464,12 +464,13 @@ class Constellation(UserDict[int, Satellite]):
         )
 
     @property
-    def eci_locations(self) -> torch.Tensor:
-        locations: list[torch.Tensor] = []
+    def coordinates_eci(self) -> torch.Tensor:
+        # TODO: refactor, rename satellite.rv
+        coordinates: list[torch.Tensor] = []
         for satellite in self.sort():
             r_CN_N, _ = satellite.rv
-            locations.append(torch.from_numpy(r_CN_N.astype(np.float32)))
-        return torch.stack(locations)
+            coordinates.append(torch.from_numpy(r_CN_N.astype(np.float32)))
+        return torch.stack(coordinates)
 
     def sort(self) -> Satellites:
         return sorted(

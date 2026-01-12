@@ -5,13 +5,14 @@ __all__ = [
 from abc import ABC, abstractmethod
 
 import torch
+from torch import nn
 
 from ..data import Actions, Constellation, TaskSet
 from ..environments import BaseEnvironment, Timer
 from ..task_managers import TaskManager
 
 
-class BaseAlgorithm(ABC):
+class BaseAlgorithm(nn.Module, ABC):
 
     def __init__(self, *args, timer: Timer, **kwargs) -> None:
         super().__init__(*args, **kwargs)

@@ -19,17 +19,7 @@ from todd.patches.py_ import json_dump, json_load
 
 from ..constants import MAX_TIME_STEP, RADIUS_EARTH, ECCENTRICITY_EARTH, MU_EARTH
 from .constellations import SensorType
-
-
-class Coordinate(NamedTuple):
-    x: float  # latitude
-    y: float  # longitude
-
-
-class CoordinateECEF(NamedTuple):
-    x: float
-    y: float
-    z: float
+from .coordinates import Coordinate, CoordinateECEF
 
 
 class TaskDict(TypedDict):
