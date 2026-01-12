@@ -66,9 +66,9 @@ class Controller:
         for _ in trange(max_time_step, disable=not progress_bar):
 
             actions, dispatch_ids = algorithm.step(
-                tasks=self._task_manager.ongoing_tasks,
-                constellation=self._environment.get_constellation(),
-                earth_rotation=self._environment.get_earth_rotation(),
+                self._task_manager.ongoing_tasks,
+                self._environment.get_constellation(),
+                self._environment.get_earth_rotation(),
             )
 
             self.step(actions, dispatch_ids)
@@ -135,10 +135,11 @@ def main() -> None:
         PowerEvaluator(),
     ]
 
-    work_dir = Path('work_dirs') / pathlib.Path("new_exp")
+    work_dir = Path('work_dirs') / pathlib.Path("new_exp_0")
+    work_dir.mkdir(parents=True, exist_ok=True)
     loggers = [
         # VisualizationLogger(work_dir=work_dir),
-        # PthLogger(work_dir=work_dir),
+        PthLogger(work_dir=work_dir),
     ]
 
     callbacks = [*evaluators, *loggers]

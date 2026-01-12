@@ -45,17 +45,19 @@ class OptimalAlgorithm(BaseAlgorithm):
         mask_cosine = cosine > math.cos(MAX_OFF_NADIR_ANGLE)
         return mask_distance & mask_cosine
 
-    def get_dispatch(
+    def _assign(
         self,
         taskset: TaskSet,  # ongoing
         constellation: Constellation,
         earth_rotation: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        # if self._timer.time == 2350:
+        #     breakpoint()
         taskset_eci = (
             earth_rotation.new_tensor(taskset.coordinates_ecef)
             @ earth_rotation
         )
-        constellation_eci = constellation.coordinates_eci  # dtype:float
+        constellation_eci = constellation.coordinates_eci
 
         satellite_task_distance = torch.norm(
             einops.rearrange(taskset_eci, 'nt three -> 1 nt three')
@@ -91,7 +93,10 @@ class OptimalAlgorithm(BaseAlgorithm):
         )
 
         task_indices = greedy_task_indices.clone()
-        task_indices[greedy_valid_mask][restorable_mask][restorable_valid_mask] = restorable_task_indices  # noqa: E501 yapf: disable
+
+        # NOTE: do not assign through multiple indexing, as it triggers clones
+        restorable_satellite_indices = torch.arange(len(constellation), dtype=torch.int)[greedy_valid_mask][restorable_mask][restorable_valid_mask]  # noqa: E501 yapf: disable
+        task_indices[restorable_satellite_indices] = restorable_task_indices
 
         assignment = torch.where(greedy_valid_mask, task_ids[task_indices], -1)
         self.previous_assignment = assignment
@@ -102,35 +107,37 @@ class OptimalAlgorithm(BaseAlgorithm):
 
     def step(
         self,
-        tasks: TaskSet,  # ongoing
+        taskset: TaskSet,  # ongoing
         constellation: Constellation,
         earth_rotation: torch.Tensor,
     ) -> tuple[Actions, list[int]]:
+        if len(taskset) == 0:
+            actions = Actions(
+                Action(
+                    # toggle=not satellite.sensor.enabled,
+                    toggle=self._timer.time == 0,
+                    target_location=None,
+                ) for satellite in constellation.sort()
+            )
+            assignment = [-1] * len(constellation)
+            return actions, assignment
 
-        num_satellites = len(constellation)
-        num_tasks = len(tasks)
-
-        toggle_imaging = self._timer.time == 0
-
-        if (num_tasks == 0):
-            return Actions(
-                Action(toggle=toggle_imaging, target_location=None)
-                for _ in range(num_satellites)
-            ), [-1 for _ in range(num_satellites)]
-
-        dispatch, task_indices = self.get_dispatch(
-            tasks,
+        assignment, task_indices = self._assign(
+            taskset,
             constellation,
             earth_rotation,
         )
 
         actions = Actions(
             Action(
-                toggle=toggle_imaging,
+                # toggle=not satellite.sensor.enabled,
+                toggle=self._timer.time == 0,
                 target_location=(
-                    None if task_index == -1 else tasks[task_index].coordinate
+                    None if task_index ==
+                    -1 else taskset[task_index].coordinate
                 ),
-            ) for task_index in task_indices
+            ) for satellite, task_index in
+            zip(constellation.sort(), task_indices)
         )
 
-        return actions, dispatch.tolist()
+        return actions, assignment.tolist()

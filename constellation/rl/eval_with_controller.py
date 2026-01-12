@@ -50,7 +50,7 @@ def main():
         done = False
         while not done:
             _, dispatch_ids = algorithm.step(
-                tasks=task_manager.ongoing_tasks,
+                taskset=task_manager.ongoing_tasks,
                 constellation=environment.get_constellation(),
                 earth_rotation=environment.get_earth_rotation(),
             )

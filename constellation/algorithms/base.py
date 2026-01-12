@@ -29,7 +29,7 @@ class BaseAlgorithm(nn.Module, ABC):
     @abstractmethod
     def step(
         self,
-        tasks: TaskSet,
+        taskset: TaskSet,
         constellation: Constellation,
         earth_rotation: torch.Tensor,
     ) -> tuple[Actions, list[int]]:
