@@ -8,17 +8,17 @@ from constellation.data import ConstellationDict, OrbitDicts
 
 
 def patch_constellation(
-    constellation: ConstellationDict,
-    orbits: OrbitDicts,
+    constellation_dict: ConstellationDict,
+    orbit_dicts: OrbitDicts,
 ) -> None:
-    orbits = random.sample(orbits, len(constellation['orbits']))
-    for i, orbit in enumerate(orbits):
+    orbit_dicts = random.sample(orbit_dicts, len(constellation_dict['orbits']))
+    for i, orbit in enumerate(orbit_dicts):
         orbit = orbit.copy()
-        orbit['id'] = constellation['orbits'][i]['id']
-        constellation['orbits'][i] = orbit
+        orbit['id'] = constellation_dict['orbits'][i]['id']
+        constellation_dict['orbits'][i] = orbit
 
 
-def patch(split: str, n: int) -> None:
+def patch_constellations(split: str, n: int) -> None:
     orbit_dicts = [json_load(str(f)) for f in tqdm(ORBITS_ROOT.iterdir())]
 
     constellations_root = CONSTELLATIONS_ROOT / split
@@ -32,7 +32,7 @@ def patch(split: str, n: int) -> None:
 
 
 def main() -> None:
-    patch('test', 1_000)
+    patch_constellations('test', 1_000)
 
 
 if __name__ == '__main__':

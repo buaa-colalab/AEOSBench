@@ -23,7 +23,7 @@ from todd.utils import init_seed
 from .environment import Environment, Observation, null_observation
 from .controller_environment import ControllerEnvironment
 from .policy import Policy
-from constellation.loggers import BaseLogger, PthLogger, VisualizationLogger
+from constellation.loggers import BaseLogger, TrajectoryLogger, VisualizationLogger
 from constellation.new_transformers.model import GLOBALS
 
 COMPLETION_RATE_THRESHOLD = 0.01

@@ -2,17 +2,21 @@ __all__ = [
     'ControllerHolder',
 ]
 
-import weakref
-from typing import TYPE_CHECKING
+from todd.utils import HolderMixin
 
-if TYPE_CHECKING:
-    from ..controller import Controller
+from ..controller import Controller
 
-class ControllerHolder:
 
-    def set_controller(self, controller: 'Controller'):
-        self._controller_ref = weakref.ref(controller)
+class ControllerHolder(HolderMixin[Controller]):
+
+    def __init__(
+        self,
+        *args,
+        controller: Controller | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, instance=controller, **kwargs)
 
     @property
-    def controller(self) -> 'Controller':
-        return self._controller_ref()
+    def controller(self) -> Controller:
+        return self._instance

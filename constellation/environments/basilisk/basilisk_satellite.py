@@ -231,6 +231,7 @@ class BasiliskSatellite:
         config_data_msg = VehicleConfigMsg()
         config_data_msg.write(satellite_config_out)
         mrp_control.vehConfigInMsg.subscribeTo(config_data_msg)
+        self._config_data_msg = config_data_msg  # NOTE: prevent garbage collection
         return mrp_control
 
     def setup_rw_state_effector(self) -> ReactionWheelStateEffector:

@@ -17,7 +17,7 @@ from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     CompletionRateEvaluator,
     PCompletionRateEvaluator,
-    PowerEvaluator,
+    PowerUsageEvaluator,
     TurnAroundTimeEvaluator,
     WCompletionRateEvaluator,
     WPCompletionRateEvaluator,
@@ -59,7 +59,7 @@ def test(work_dir: pathlib.Path, split: str, i: int) -> list[float] | None:
         WCompletionRateEvaluator(),
         WPCompletionRateEvaluator(),
         TurnAroundTimeEvaluator(),
-        PowerEvaluator(),
+        PowerUsageEvaluator(),
     ]
     controller = Controller(exp_name="exp", evaluators=evaluators)
 

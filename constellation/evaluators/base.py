@@ -2,12 +2,13 @@ __all__ = [
     'BaseEvaluator',
 ]
 
-from abc import abstractmethod
+from todd.runners import Memo, get_memo
 
-from ..callbacks.base import BaseCallback
-from ..task_managers import TaskManager
-from ..environments import BaseEnvironment, Timer
+from ..callbacks import BaseCallback
 
 
 class BaseEvaluator(BaseCallback):
-    pass
+
+    @property
+    def metrics(self) -> Memo:
+        return get_memo(self.controller.memo, 'metrics')

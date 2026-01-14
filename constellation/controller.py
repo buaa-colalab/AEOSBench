@@ -2,44 +2,46 @@ __all__ = [
     'Controller',
 ]
 
-import itertools
 from pathlib import Path
-import pathlib
-from typing import Iterable, Union, List
+from typing import TYPE_CHECKING
 
-import torch
-from tqdm import tqdm, trange
-
-from .new_transformers.dataset import Actions
-
-from .constants import MAX_TIME_STEP
-
-from .callbacks.memo import Memo, get_memo
+from todd.runners import Memo
+from tqdm import trange
 
 from .algorithms import BaseAlgorithm, OptimalAlgorithm
-from .callbacks.base import BaseCallback
-from .data import TaskSet, Constellation
+from .constants import MAX_TIME_STEP
+from .data import Actions, Constellation, TaskSet
 from .environments import BaseEnvironment
-from .evaluators import BaseEvaluator, CompletionRateEvaluator, PCompletionRateEvaluator, WCompletionRateEvaluator, WPCompletionRateEvaluator, TurnAroundTimeEvaluator, PowerEvaluator
-from .loggers import BaseLogger, PthLogger, VisualizationLogger
 from .task_managers import TaskManager
+
+if TYPE_CHECKING:
+    from .callbacks import ComposedCallback
 
 
 class Controller:
 
     def __init__(
         self,
+        name: str,
+        *args,
         environment: BaseEnvironment,
         task_manager: TaskManager,
-        callbacks: List[BaseCallback] = None,
+        callbacks: 'ComposedCallback',
+        **kwargs,
     ) -> None:
+        super().__init__(*args, **kwargs)
+        self._name = name
         self._environment = environment
         self._task_manager = task_manager
 
         self._callbacks = callbacks
+        self._memo: Memo = dict()
 
-        for callback in self._callbacks:
-            callback.on_init(controller=self)
+        callbacks.bind(self)
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def environment(self) -> BaseEnvironment:
@@ -50,75 +52,73 @@ class Controller:
         return self._task_manager
 
     @property
-    def callbacks(self) -> List[BaseCallback]:
+    def callbacks(self) -> 'ComposedCallback':
         return self._callbacks
 
-    def run(
-        self,
-        ordinal: int,
-        algorithm: BaseAlgorithm,
-        max_time_step: int = MAX_TIME_STEP,
-        progress_bar: bool = True,
-    ) -> Memo:
+    @property
+    def memo(self) -> Memo:
+        return self._memo
 
-        memo = Memo()
+    def step(self, actions: Actions, assignment: list[int]) -> None:
+        self._memo['actions'] = actions
+        self._memo['assignment'] = assignment
 
-        for _ in trange(max_time_step, disable=not progress_bar):
-
-            actions, dispatch_ids = algorithm.step(
-                self._task_manager.ongoing_tasks,
-                self._environment.get_constellation(),
-                self._environment.get_earth_rotation(),
-            )
-
-            self.step(actions, dispatch_ids)
-
-            if self._task_manager.all_closed:
-                print('All tasks are closed.')
-                break
-
-        for callback in self._callbacks:  # TODO: extract & combine
-            callback.on_run_end(memo=memo, save_name=str(ordinal))
-        metrics = get_memo(memo, 'metrics')
-
-        return metrics  # TODO: return memo
-
-    def step(
-        self,
-        actions,
-        dispatch_ids,
-    ):
-        for callback in self._callbacks:
-            callback.on_step_begin()
+        self._callbacks.before_step()
 
         is_visible = self._environment.is_visible(self._task_manager.all_tasks)
+        self._memo['is_visible'] = is_visible
+
         self._task_manager.record(is_visible)
 
         self._environment.take_actions(actions)
 
-        for callback in self._callbacks:
-            callback.on_step_end(dispatch_id=dispatch_ids)
+        self._callbacks.after_step()
 
-        self._environment._timer.step()
-        # print(self._environment._timer.time)
-        # print("sat:" + str(self._environment.num_satellites))
-        # print("tasks:" + str(self._task_manager.num_ongoing_tasks))
+        # TODO: why not step timer in environment.step?
+        self._environment.timer.step()
         self._environment.step()
+
+    def run(
+        self,
+        algorithm: BaseAlgorithm,
+        *,
+        progress_bar: bool = True,
+    ) -> None:
+        self._memo['algorithm'] = algorithm
+        self._callbacks.before_run()
+
+        for _ in trange(MAX_TIME_STEP, disable=not progress_bar):
+            if self._callbacks.should_break():
+                break
+
+            actions, assignment = algorithm.step(
+                self._task_manager.ongoing_tasks,
+                self._environment.get_constellation(),
+                self._environment.get_earth_rotation(),
+            )
+            self.step(actions, assignment)
+
+        self._callbacks.after_run()
 
 
 def main() -> None:
-    from .data import Task
-    from .environments import BasiliskEnvironment
+    import pathlib
 
-    tasks: TaskSet = TaskSet.load('data/tasksets/test/00/00000.json')
-    constellation = Constellation.load(
-        'data/constellations/test/00/00003.json'
-        # 'data/constellations/test/00/00000.json'
+    from .callbacks import ComposedCallback
+    from .environments import BasiliskEnvironment
+    from .evaluators import (
+        CompletionRateEvaluator,
+        PowerUsageEvaluator,
+        TurnAroundTimeEvaluator,
     )
-    time_string = '20190101000000'
+    from .loggers import TrajectoryLogger
+
+    tasks = TaskSet.load('data/tasksets/test/00/00000.json')
+    constellation = Constellation.load(
+        'data/constellations/test/00/00003.json',
+        # 'data/constellations/test/00/00000.json',
+    )
     environment = BasiliskEnvironment(
-        start_time=0,
-        standard_time_init=time_string,
         constellation=constellation,
         all_tasks=tasks,
     )
@@ -128,29 +128,27 @@ def main() -> None:
 
     evaluators = [
         CompletionRateEvaluator(),
-        PCompletionRateEvaluator(),
-        WCompletionRateEvaluator(),
-        WPCompletionRateEvaluator(),
-        # TurnAroundTimeEvaluator(),
-        PowerEvaluator(),
+        TurnAroundTimeEvaluator(),
+        PowerUsageEvaluator(),
     ]
 
-    work_dir = Path('work_dirs') / pathlib.Path("new_exp_0")
+    work_dir = Path('work_dirs') / 'new_exp_0'
     work_dir.mkdir(parents=True, exist_ok=True)
     loggers = [
-        # VisualizationLogger(work_dir=work_dir),
-        PthLogger(work_dir=work_dir),
+        TrajectoryLogger(work_dir=work_dir),
     ]
 
-    callbacks = [*evaluators, *loggers]
+    callbacks = ComposedCallback(callbacks=[*evaluators, *loggers])
 
     controller = Controller(
+        pathlib.Path(__file__).stem,
         environment=environment,
         task_manager=task_manager,
         callbacks=callbacks,
     )
 
-    print(controller.run(0, algorithm))
+    controller.run(algorithm)
+    print(controller.memo['metrics'])
 
 
 if __name__ == "__main__":

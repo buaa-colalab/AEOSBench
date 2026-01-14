@@ -1,5 +1,6 @@
 import argparse
 import multiprocessing
+import os
 import pathlib
 from functools import partial
 
@@ -9,18 +10,21 @@ from todd.patches.py_ import json_dump, json_load
 from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
 from constellation.algorithms import OptimalAlgorithm
 from constellation.controller import Controller
-from constellation.data import Constellation, Task, TaskSet
+from constellation.data import Constellation, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     CompletionRateEvaluator,
     PCompletionRateEvaluator,
-    PowerEvaluator,
+    PowerUsageEvaluator,
     TurnAroundTimeEvaluator,
     WCompletionRateEvaluator,
     WPCompletionRateEvaluator,
 )
 from constellation.task_managers import TaskManager
-from constellation.loggers import PthLogger, VisualizationLogger
+from constellation.loggers import TrajectoryLogger
+
+RANK = int(os.environ['RANK'])
+WORLD_SIZE = int(os.environ['WORLD_SIZE'])
 
 MAX_RETRY = 1
 COMPLETION_RATE_THRESHOLD = 0.01
@@ -30,7 +34,7 @@ def generate_trajectory(
     split: str,
     i: int,
     tabu: pathlib.Path | None = None,
-) -> list[float] | None:
+) -> bool:
     path = f'{split}/{i // 1000:02}/{i:05}.json'
     constellation_path = CONSTELLATIONS_ROOT / path
     tasks_path = TASKSETS_ROOT / path
@@ -40,17 +44,15 @@ def generate_trajectory(
     if trajectory_path.exists():
         metrics = json_load(str(trajectory_path))
         if metrics[0] > COMPLETION_RATE_THRESHOLD:
-            todd.logger.info(f'{split=} {i=} already exists')
-            return None
+            todd.logger.info('split=%s i=%s already exists', split, i)
+            return True
 
     if tabu is None:
         tabu_path = None
     else:
         tabu_path = tabu / path
         tabu_path = tabu_path.with_suffix('.tabu.json')
-        if not tabu_path.exists():
-            todd.logger.info(f'{split=} {i=} tabu path not exists')
-            return None
+        assert tabu_path.exists()
 
     taskset = TaskSet.load(str(tasks_path))
     constellation = Constellation.load(str(constellation_path))
@@ -67,8 +69,8 @@ def generate_trajectory(
         WCompletionRateEvaluator(),
         WPCompletionRateEvaluator(),
         TurnAroundTimeEvaluator(),
-        PowerEvaluator(),
-        PthLogger(work_dir=trajectory_path.parent),
+        PowerUsageEvaluator(),
+        TrajectoryLogger(work_dir=trajectory_path.parent),
     ]
     task_manager = TaskManager(timer=environment.timer, tasks=taskset)
     algorithm.prepare(environment=environment, task_manager=task_manager)
@@ -80,58 +82,37 @@ def generate_trajectory(
 
     metrics = controller.run(i, algorithm)
 
-    json_dump(metrics, str(trajectory_path))
+    if metrics[0] > COMPLETION_RATE_THRESHOLD:
+        todd.logger.info('split=%s i=%d metrics=%s', split, i, metrics)
+        json_dump(metrics, str(trajectory_path))
+        return True
 
-    return metrics
-
-
-def generate_trajectory_retry(split: str, i: int, **kwargs) -> None:
-    for retry in range(MAX_RETRY):
-        todd.logger.info(f"{retry=} {split=} {i=}")
-
-        # try:
-        metrics = generate_trajectory(split, i, **kwargs)
-        # except:
-        #     todd.logger.exception(f"{retry=} {split=} {i=}")
-        #     completion_rate = 0.0
-
-        if metrics is None:
-            return
-        if metrics[0] > COMPLETION_RATE_THRESHOLD:
-            todd.logger.info(f"{split=} {i=} {metrics=}")
-            return
-
-    todd.logger.info(f"{split=} {i=} failed")
+    return False
 
 
-def generate(num_workers: int, split: str, n: int, **kwargs) -> None:
-    if num_workers == 0:
-        for i in range(n):
-            generate_trajectory_retry(split, i, **kwargs)
-        return
-
-    with multiprocessing.Pool(num_workers) as pool:
-        list(
-            pool.imap_unordered(
-                partial(generate_trajectory_retry, split, **kwargs),
-                range(n),
-            )
-        )
+def generate_trajectories(split: str, n: int, **kwargs) -> None:
+    for i in range(RANK, n, WORLD_SIZE):
+        for retry in range(MAX_RETRY):
+            todd.logger.info('retry=%d split=%s i=%d', retry, split, i)
+            if generate_trajectory(split, i, **kwargs):
+                break
+        else:
+            todd.logger.info('split=%s i=%d failed', split, i)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser('Generate trajectories')
-    parser.add_argument('num_workers', type=int)
     parser.add_argument('--tabu', type=pathlib.Path)
-    return parser.parse_args()
+    args = parser.parse_args()
+    return args
 
 
 def main() -> None:
     args = parse_args()
-    generate(args.num_workers, 'train', 50_000, tabu=args.tabu)
-    generate(args.num_workers, 'val_seen', 500, tabu=args.tabu)
-    generate(args.num_workers, 'val_unseen', 500, tabu=args.tabu)
-    generate(args.num_workers, 'test', 1_000, tabu=args.tabu)
+    generate_trajectories('train', 50_000, tabu=args.tabu)
+    generate_trajectories('val_seen', 500, tabu=args.tabu)
+    generate_trajectories('val_unseen', 500, tabu=args.tabu)
+    generate_trajectories('test', 1_000, tabu=args.tabu)
 
 
 if __name__ == '__main__':

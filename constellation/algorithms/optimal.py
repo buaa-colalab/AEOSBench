@@ -3,14 +3,15 @@ __all__ = [
 ]
 
 import math
+
 import einops
 import torch
 
+from ..constants import MAX_OFF_NADIR_ANGLE, RADIUS_EARTH
 from ..data import Action, Actions, Constellation, TaskSet
-from ..constants import RADIUS_EARTH, MAX_OFF_NADIR_ANGLE
-from .base import BaseAlgorithm
-from ..task_managers import TaskManager
 from ..environments import BaseEnvironment
+from ..task_managers import TaskManager
+from .base import BaseAlgorithm
 
 
 class OptimalAlgorithm(BaseAlgorithm):

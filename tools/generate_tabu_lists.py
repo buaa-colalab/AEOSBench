@@ -54,7 +54,7 @@ def generate_tabu_list(
     tabu_path = trajectories_root / f'{i // 1000:02}' / f'{i:05}.tabu.json'
 
     taskset: TaskSet[Task] = TaskSet.load(str(taskset_path))
-    durations = torch.tensor(taskset.durations)
+    durations = taskset.durations
 
     trajectory: TrajectoryData = torch.load(str(trajectory_path))
     progress, _ = trajectory['taskset']['progress'].max(0)

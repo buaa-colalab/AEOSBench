@@ -11,6 +11,7 @@ from constellation import (
     TaskManager,
 )
 from constellation.algorithms import OptimalAlgorithm
+from constellation.callbacks import ComposedCallback
 from constellation.data import Constellation, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import CompletionRateEvaluator
@@ -36,7 +37,10 @@ def generate_satellites(
 ) -> None:
     satellites_root: pathlib.Path = SATELLITES_ROOT / split
     max_id = max(
-        [int(satellite_path.stem) for satellite_path in satellites_root.iterdir()],
+        (
+            int(satellite_path.stem)
+            for satellite_path in satellites_root.iterdir()
+        ),
         default=-1,
     )
 
@@ -50,22 +54,30 @@ def generate_satellites(
             all_tasks=TASKSET,
         )
         task_manager = TaskManager(timer=environment.timer, tasks=TASKSET)
-        algorithm = OptimalAlgorithm(timer=environment.timer)
-        algorithm.prepare(environment, task_manager)
+        callbacks = ComposedCallback(
+            callbacks=[
+                CompletionRateEvaluator(),
+            ],
+        )
         controller = Controller(
+            pathlib.Path(__file__).stem,
             environment=environment,
             task_manager=task_manager,
-            callbacks=[CompletionRateEvaluator()],
+            callbacks=callbacks,
         )
 
+        algorithm = OptimalAlgorithm(timer=environment.timer)
+        algorithm.prepare(environment, task_manager)
+
         try:
-            metrics = controller.run(0, algorithm, progress_bar=False)
+            controller.run(algorithm, progress_bar=False)
         except Exception as e:
             todd.logger.error("rank %d failed %d: %s", RANK, i, e)
             continue
 
-        todd.logger.info("rank %d finished %d with %s", RANK, i, metrics['CR'])
-        if metrics['CR'] > threshold:
+        completion_rate = controller.memo['metrics']['CR']
+        todd.logger.info("rank %d finished %d with %s", RANK, i, completion_rate)  # noqa: E501 yapf: disable
+        if completion_rate > threshold:
             constellation.dump(str(satellites_root / f'{i}.json'))
 
 

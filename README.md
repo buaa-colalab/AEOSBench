@@ -96,3 +96,8 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=4 RANK=0 python -m constellation.rl.eval_all \
 
 python -m rl.merge_csvs work_dirs/rl_eval_new_data/completion_rates.csv work_dirs/rl_eval_new_data/completion_rates_*
 ```
+
+# TODO
+
+rename tasks to taskset
+rename timestep to time_step

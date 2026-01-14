@@ -2,32 +2,40 @@ __all__ = [
     'TurnAroundTimeEvaluator',
 ]
 
-from ..callbacks.memo import Memo, get_memo
-from ..task_managers import TaskManager
+import torch
 from .base import BaseEvaluator
-from ..environments import BaseEnvironment, Timer
-from constellation import task_managers
 
 
 class TurnAroundTimeEvaluator(BaseEvaluator):
 
-    def __init__(self):
-        super().__init__()
-        self.completion_time = []
+    @property
+    def succeeded_flags(self) -> torch.Tensor:
+        return self.controller.task_manager.succeeded_flags
 
-    def on_step_end(self, **kwargs) -> None:
-        if not self.completion_time:
-            self.completion_time = [float('inf') for _ in self.task_manager.all_tasks]
-        for i, task in enumerate(self.task_manager.all_tasks):
-            if task in self.task_manager.succeeded_tasks:
-                self.completion_time[i] = min(
-                    self.completion_time[i], self.environment.timer.time
-                )
+    @property
+    def completion_time(self) -> torch.Tensor:
+        return self.controller.memo['completion_time']
 
-    def on_run_end(self, memo: Memo, **kwargs) -> None:
-        sum_time = 0
-        for i, task in enumerate(self.task_manager.all_tasks):
-            if (task in self.task_manager.succeeded_tasks):
-                sum_time += self.completion_time[i] - task.release_time
-        metrics = get_memo(memo, 'metrics')
-        metrics['TT'] = sum_time
+    @completion_time.setter
+    def completion_time(self, value: torch.Tensor) -> None:
+        self.controller.memo['completion_time'] = value
+
+    def bind(self, *args, **kwargs) -> None:
+        super().bind(*args, **kwargs)
+        self.completion_time = torch.full(
+            (self.controller.task_manager.num_all_tasks, ),
+            float('inf'),
+        )
+
+    def after_step(self) -> None:
+        self.completion_time[self.succeeded_flags] = torch.clamp_max(
+            self.completion_time[self.succeeded_flags],
+            self.controller.environment.timer.time,
+        )
+
+    def after_run(self) -> None:
+        release_times = self.controller.task_manager.all_tasks.release_times
+        turn_around_time = self.completion_time - release_times
+        self.metrics['TAT'] = (
+            turn_around_time[self.succeeded_flags].mean().item()
+        )

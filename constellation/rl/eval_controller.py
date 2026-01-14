@@ -25,7 +25,7 @@ from todd.utils import init_seed
 
 from .environment import Environment, Observation, null_observation
 from .policy import Policy
-from constellation.loggers import BaseLogger, PthLogger, VisualizationLogger
+from constellation.loggers import BaseLogger, TrajectoryLogger, VisualizationLogger
 from constellation.new_transformers.model import GLOBALS
 from constellation.callbacks.base import BaseCallback
 from constellation.callbacks.memo import Memo
@@ -189,7 +189,7 @@ class EvalController:
                 todd.logger.info("rank %s step %d", os.environ['RANK'], i)
 
             for callback in self._callbacks:
-                callback.on_step_begin()
+                callback.before_step()
 
             actions, _ = self.algorithm.predict(
                 observations,
@@ -208,7 +208,7 @@ class EvalController:
                 dispatch_ids = infos[0]['task_id_list']
 
             for callback in self._callbacks:
-                callback.on_step_end(dispatch_id=dispatch_ids)
+                callback.after_step(dispatch_id=dispatch_ids)
 
             for done, info in zip(dones, infos):
                 if done and not info.get('all_done', False):
@@ -237,9 +237,7 @@ class EvalController:
         vis_name = pathlib.Path(f"eval_result_{os.environ['RANK']}.json")
 
         for callback in self._callbacks:
-            callback.on_run_end(
-                pth_name=pth_name, vis_name=vis_name, memo=memo
-            )
+            callback.after_run(pth_name=pth_name, vis_name=vis_name, memo=memo)
         print(memo)
 
 
@@ -314,7 +312,7 @@ def main() -> None:
     evaluators = [e0, e1, e2, e3, et]
 
     l0 = VisualizationLogger(work_dir=work_dir)
-    l1 = PthLogger(work_dir=work_dir)
+    l1 = TrajectoryLogger(work_dir=work_dir)
     loggers = [l0, l1]
 
     callbacks = [*evaluators, *loggers]

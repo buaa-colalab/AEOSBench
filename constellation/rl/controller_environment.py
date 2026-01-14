@@ -42,7 +42,7 @@ from constellation.evaluators import (
     WCompletionRateEvaluator,
     WPCompletionRateEvaluator,
     TurnAroundTimeEvaluator,
-    PowerEvaluator,
+    PowerUsageEvaluator,
 )
 from constellation import TaskManager
 from constellation.callbacks.memo import Memo, get_memo
@@ -115,7 +115,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         memo = Memo()
         # print(self._controller.callbacks)
         for evaluator in self._controller.callbacks:
-            evaluator.on_run_end(memo=memo, save_name=str(self._current_id))
+            evaluator.after_run(memo=memo, save_name=str(self._current_id))
 
         return memo
 
@@ -233,7 +233,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             WCompletionRateEvaluator(),
             WPCompletionRateEvaluator(),
             TurnAroundTimeEvaluator(),
-            PowerEvaluator()
+            PowerUsageEvaluator()
         ]
 
         self._controller = Controller(

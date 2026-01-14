@@ -121,8 +121,12 @@ class Task:
 class TaskSet(UserList[Task]):
 
     @property
-    def durations(self) -> list[int]:
-        return [task.duration for task in self]
+    def release_times(self) -> torch.Tensor:
+        return torch.tensor([task.release_time for task in self])
+
+    @property
+    def durations(self) -> torch.Tensor:
+        return torch.tensor([task.duration for task in self])
 
     @property
     def coordinates_ecef(self) -> list[CoordinateECEF]:

@@ -1,23 +1,39 @@
 __all__ = [
-    'PowerEvaluator',
+    'PowerUsageEvaluator',
 ]
 
-from ..callbacks.memo import Memo, get_memo
-from ..task_managers import TaskManager
-from ..environments import BaseEnvironment
+import torch
 from .base import BaseEvaluator
 
 
-class PowerEvaluator(BaseEvaluator):
+class PowerUsageEvaluator(BaseEvaluator):
 
-    def __init__(self, *args, **kwargs) -> None:
-        self.power_used = 0.0
+    @property
+    def working_time_steps(self) -> torch.Tensor:
+        return self.controller.memo['working_time_steps']
 
-    def on_run_end(self, memo: Memo, **kwargs) -> None:
-        metrics = get_memo(memo, 'metrics')
-        metrics['PC'] = self.power_used
+    @working_time_steps.setter
+    def working_time_steps(self, value: torch.Tensor) -> None:
+        self.controller.memo['working_time_steps'] = value
 
-    def on_step_end(self, dispatch_id: list, **kwargs) -> None:
-        for sat_id, sat in self.environment.get_constellation().items():
-            if dispatch_id[sat_id] != -1:
-                self.power_used += sat.sensor.power
+    def bind(self, *args, **kwargs) -> None:
+        super().bind(*args, **kwargs)
+        self.working_time_steps = torch.zeros(
+            self.controller.environment.num_satellites,
+            dtype=torch.int,
+        )
+
+    def after_step(self) -> None:
+        # TODO: fix after making assignment a tensor
+        self.working_time_steps += torch.tensor(
+            self.controller.memo['assignment']
+        ) != -1
+
+    def after_run(self) -> None:
+        sensor_power = torch.tensor([
+            satellite.sensor.power for satellite in
+            self.controller.environment.get_constellation().values()
+        ])
+        self.metrics['PC'] = (
+            torch.sum(self.working_time_steps * sensor_power).item()
+        )

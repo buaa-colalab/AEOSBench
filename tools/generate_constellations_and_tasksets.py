@@ -21,8 +21,6 @@ def load_satellites(split: str) -> Satellites:
 
 
 def generate_constellations_and_tasksets(split: str, n: int) -> None:
-    todd.logger.info("Generating %s", split)
-
     satellites = load_satellites(split)
 
     constellations_root = CONSTELLATIONS_ROOT / split
@@ -33,7 +31,10 @@ def generate_constellations_and_tasksets(split: str, n: int) -> None:
         )
         if not constellation_path.exists():
             constellation_path.parent.mkdir(parents=True, exist_ok=True)
-            constellation = Constellation.sample(satellites, random.randint(1, 50))
+            constellation = Constellation.sample(
+                satellites,
+                random.randint(1, 50),
+            )
             constellation.dump(str(constellation_path))
 
         taskset_path = tasks_root / f'{i // 1000:02}' / f'{i:05}.json'

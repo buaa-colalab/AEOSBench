@@ -44,7 +44,7 @@ from constellation.evaluators import (
     WCompletionRateEvaluator,
     WPCompletionRateEvaluator,
     TurnAroundTimeEvaluator,
-    PowerEvaluator,
+    PowerUsageEvaluator,
 )
 from constellation import TaskManager
 
@@ -353,7 +353,7 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             WCompletionRateEvaluator(),
             WPCompletionRateEvaluator(),
             TurnAroundTimeEvaluator(),
-            PowerEvaluator()
+            PowerUsageEvaluator()
         ]
 
         self._skip_idle()
