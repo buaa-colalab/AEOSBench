@@ -3,6 +3,7 @@ __all__ = [
 ]
 
 import math
+import pathlib
 
 import einops
 import torch
@@ -15,6 +16,15 @@ from .base import BaseAlgorithm
 
 
 class OptimalAlgorithm(BaseAlgorithm):
+
+    def __init__(
+        self,
+        *args,
+        forbidden_task_ids: torch.Tensor | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._forbidden_task_ids = forbidden_task_ids
 
     def prepare(
         self,
@@ -73,6 +83,14 @@ class OptimalAlgorithm(BaseAlgorithm):
         )
         orbital_radius = constellation_eci.norm(dim=1)
 
+        if self._forbidden_task_ids is not None:
+            forbidden_task_ids = einops.rearrange(
+                self._forbidden_task_ids,
+                'n ns -> n ns 1',
+            )
+            forbidden_mask = torch.any(forbidden_task_ids == taskset.ids, 0)
+            satellite_task_distance[forbidden_mask] = float('inf')
+
         greedy_distance, greedy_task_indices = (
             satellite_task_distance.min(dim=1)
         )
@@ -85,9 +103,7 @@ class OptimalAlgorithm(BaseAlgorithm):
             return default_task_indices, default_assignment
 
         previous_assignment = self.previous_assignment[greedy_valid_mask]
-        task_ids = previous_assignment.new_tensor([
-            task.id_ for task in taskset
-        ])
+        task_ids = taskset.ids
 
         task_indices = torch.where(greedy_valid_mask, greedy_task_indices, -1)
         assignment = torch.where(greedy_valid_mask, task_ids[greedy_task_indices], -1)  # noqa: E501 yapf: disable
@@ -110,10 +126,13 @@ class OptimalAlgorithm(BaseAlgorithm):
         if not restorable_valid_mask.any():
             return task_indices, assignment
 
+        restorable_task_indices = (
+            restorable_task_indices[restorable_valid_mask]
+        )
+
         # NOTE: do not assign through multiple indexing, as it triggers clones
         restorable_satellite_indices = torch.arange(
             len(constellation),
-            dtype=torch.int,
         )[greedy_valid_mask][restorable_mask][restorable_valid_mask]
         task_indices[restorable_satellite_indices] = restorable_task_indices
         assignment[restorable_satellite_indices] = (

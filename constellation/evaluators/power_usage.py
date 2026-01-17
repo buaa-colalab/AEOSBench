@@ -16,8 +16,7 @@ class PowerUsageEvaluator(BaseEvaluator):
     def working_time_steps(self, value: torch.Tensor) -> None:
         self.controller.memo['working_time_steps'] = value
 
-    def bind(self, *args, **kwargs) -> None:
-        super().bind(*args, **kwargs)
+    def before_run(self) -> None:
         self.working_time_steps = torch.zeros(
             self.controller.environment.num_satellites,
             dtype=torch.int,
@@ -25,9 +24,9 @@ class PowerUsageEvaluator(BaseEvaluator):
 
     def after_step(self) -> None:
         # TODO: fix after making assignment a tensor
-        self.working_time_steps += torch.tensor(
-            self.controller.memo['assignment']
-        ) != -1
+        self.working_time_steps += (
+            torch.tensor(self.controller.memo['assignment']) != -1
+        )
 
     def after_run(self) -> None:
         sensor_power = torch.tensor([

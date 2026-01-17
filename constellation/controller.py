@@ -65,7 +65,7 @@ class Controller:
 
         self._callbacks.before_step()
 
-        is_visible = self._environment.is_visible(self._task_manager.all_tasks)
+        is_visible = self._environment.is_visible(self._task_manager.taskset)
         self._memo['is_visible'] = is_visible
 
         self._task_manager.record(is_visible)
@@ -122,7 +122,7 @@ def main() -> None:
         constellation=constellation,
         all_tasks=tasks,
     )
-    task_manager = TaskManager(timer=environment.timer, tasks=tasks)
+    task_manager = TaskManager(timer=environment.timer, taskset=tasks)
     algorithm = OptimalAlgorithm(timer=environment.timer)
     algorithm.prepare(environment, task_manager)
 

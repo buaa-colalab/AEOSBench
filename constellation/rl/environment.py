@@ -342,7 +342,7 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
         task_manager = TaskManager(
             timer=simulator.timer,
-            tasks=tasks,
+            taskset=tasks,
             num_satellites=simulator.num_satellites,
         )
         self._task_manager = task_manager

@@ -21,6 +21,9 @@ PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
 unzip -q data/orbits.zip -d data
 PYTHONPATH=:${PYTHONPATH} python tools/patch_constellations.py
 
+PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 2 tools/generate_trajectories.py
+
+
 # train transformer model
 CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train refactor_test constellation/new_transformers/config.py
 
@@ -45,7 +48,6 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=1 RANK=0 python -m constellation.rl.eval_all \
 ## Data
 
 ```bash
-PYTHONPATH=:${PYTHONPATH} python tools/generate_trajectories.py 400
 PYTHONPATH=:${PYTHONPATH} python tools/generate_annotations.py
 PYTHONPATH=:${PYTHONPATH} python tools/generate_tabu_lists.py 400
 mv data/trajectories data/trajectories.tabu.1
@@ -97,7 +99,8 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=4 RANK=0 python -m constellation.rl.eval_all \
 python -m rl.merge_csvs work_dirs/rl_eval_new_data/completion_rates.csv work_dirs/rl_eval_new_data/completion_rates_*
 ```
 
-# TODO
+## TODO
 
 rename tasks to taskset
 rename timestep to time_step
+test anaconda

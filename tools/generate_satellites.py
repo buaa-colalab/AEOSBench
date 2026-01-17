@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
 def generate_satellites(
     split: str,
     n: int,
-    threshold: float,
+    completion_rate_threshold: float,
 ) -> None:
     satellites_root: pathlib.Path = SATELLITES_ROOT / split
     max_id = max(
@@ -53,7 +53,7 @@ def generate_satellites(
             constellation=constellation,
             all_tasks=TASKSET,
         )
-        task_manager = TaskManager(timer=environment.timer, tasks=TASKSET)
+        task_manager = TaskManager(timer=environment.timer, taskset=TASKSET)
         callbacks = ComposedCallback(
             callbacks=[
                 CompletionRateEvaluator(),
@@ -77,7 +77,7 @@ def generate_satellites(
 
         completion_rate = controller.memo['metrics']['CR']
         todd.logger.info("rank %d finished %d with %s", RANK, i, completion_rate)  # noqa: E501 yapf: disable
-        if completion_rate > threshold:
+        if completion_rate > completion_rate_threshold:
             constellation.dump(str(satellites_root / f'{i}.json'))
 
 

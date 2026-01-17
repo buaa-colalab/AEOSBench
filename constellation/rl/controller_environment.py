@@ -223,7 +223,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
         task_manager = TaskManager(
             timer=simulator.timer,
-            tasks=tasks,
+            taskset=tasks,
         )
         self._last_num_succeeded_tasks = 0
 
@@ -279,7 +279,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         )
 
     def _take_actions(self, task_ids: npt.NDArray[np.int32]) -> None:
-        tasks = self._controller.task_manager.all_tasks
+        tasks = self._controller.task_manager.taskset
         constellation = self._controller.environment.get_constellation()
         target_locations = [
             None if task_id == -1 else tasks[task_id].coordinate

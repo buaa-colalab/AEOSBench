@@ -12,6 +12,7 @@ import math
 import random
 from collections import UserList
 from typing import Any, NamedTuple, TypedDict, cast
+import einops
 from typing_extensions import Self
 
 import torch
@@ -121,6 +122,10 @@ class Task:
 class TaskSet(UserList[Task]):
 
     @property
+    def ids(self) -> torch.Tensor:
+        return torch.tensor([task.id_ for task in self])
+
+    @property
     def release_times(self) -> torch.Tensor:
         return torch.tensor([task.release_time for task in self])
 
@@ -131,6 +136,10 @@ class TaskSet(UserList[Task]):
     @property
     def coordinates_ecef(self) -> list[CoordinateECEF]:
         return [task.coordinate_ecef for task in self]
+
+    def get_task_indices(self, task_ids: torch.Tensor) -> torch.Tensor:
+        task_ids = einops.rearrange(task_ids, 'nt -> nt 1')
+        return torch.argmax((task_ids == self.ids).int(), 1)
 
     def to_dicts(self) -> TaskDicts:
         return [task.to_dict() for task in self]

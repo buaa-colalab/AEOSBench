@@ -24,34 +24,39 @@ class TaskManager:
         self,
         *args,
         timer: Timer,
-        tasks: TaskSet,
+        taskset: TaskSet,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._timer = timer
-        self._tasks = tasks
+        self._taskset = taskset
 
         self._progress = torch.zeros(
             self.num_all_tasks,
             dtype=torch.uint8,
         )
 
-        self._succeeded_flags = torch.zeros(len(tasks), dtype=torch.bool)
+        self._succeeded_flags = torch.zeros(
+            self.num_all_tasks,
+            dtype=torch.bool,
+        )
 
     def _filter_tasks(self, flags: torch.Tensor) -> TaskSet:
-        return TaskSet(task for task, flag in zip(self._tasks, flags) if flag)
+        return TaskSet(
+            task for task, flag in zip(self._taskset, flags) if flag
+        )
 
     @property
     def unreleased_flags(self) -> torch.Tensor:
         return torch.tensor([
-            self._timer.time < task.release_time for task in self._tasks
+            self._timer.time < task.release_time for task in self._taskset
         ])
 
     @property
     def ongoing_flags(self) -> torch.Tensor:
         return ~self.succeeded_flags & torch.tensor([
             task.release_time <= self._timer.time <= task.due_time
-            for task in self._tasks
+            for task in self._taskset
         ])
 
     @property
@@ -61,7 +66,7 @@ class TaskManager:
     @property
     def failed_flags(self) -> torch.Tensor:
         return ~self.succeeded_flags & torch.tensor([
-            task.due_time < self._timer.time for task in self._tasks
+            task.due_time < self._timer.time for task in self._taskset
         ])
 
     @property
@@ -69,8 +74,8 @@ class TaskManager:
         return self.succeeded_flags | self.failed_flags
 
     @property
-    def all_tasks(self) -> TaskSet:
-        return self._tasks
+    def taskset(self) -> TaskSet:
+        return self._taskset
 
     @property
     def ongoing_tasks(self) -> TaskSet:
@@ -102,7 +107,7 @@ class TaskManager:
 
     @property
     def num_all_tasks(self) -> int:
-        return len(self._tasks)
+        return len(self._taskset)
 
     @property
     def num_ongoing_tasks(self) -> int:
@@ -113,7 +118,7 @@ class TaskManager:
         return len(self.succeeded_tasks)
 
     def record(self, is_visible: torch.Tensor) -> None:
-        durations = torch.tensor([task.duration for task in self._tasks])
+        durations = torch.tensor([task.duration for task in self._taskset])
 
         is_visible[:, ~self.ongoing_flags] = False
         is_visible = is_visible.any(0)

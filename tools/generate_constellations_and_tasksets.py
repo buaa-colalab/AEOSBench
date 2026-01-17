@@ -27,7 +27,7 @@ def generate_constellations_and_tasksets(split: str, n: int) -> None:
     tasks_root = TASKSETS_ROOT / split
     for i in trange(n):
         constellation_path = (
-            constellations_root / f'{i // 1000:02}' / f'{i:05}.json'
+            constellations_root / f'{i // 1000:02}/{i:05}.json'
         )
         if not constellation_path.exists():
             constellation_path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,7 +37,7 @@ def generate_constellations_and_tasksets(split: str, n: int) -> None:
             )
             constellation.dump(str(constellation_path))
 
-        taskset_path = tasks_root / f'{i // 1000:02}' / f'{i:05}.json'
+        taskset_path = tasks_root / f'{i // 1000:02}/{i:05}.json'
         if not taskset_path.exists():
             taskset_path.parent.mkdir(parents=True, exist_ok=True)
             taskset = TaskSet.sample(random.randint(50, 300))

@@ -16,8 +16,7 @@ class CompletionRateEvaluator(BaseEvaluator):
     def max_progress(self, value: torch.Tensor) -> None:
         self.controller.memo['max_progress'] = value
 
-    def bind(self, *args, **kwargs) -> None:
-        super().bind(*args, **kwargs)
+    def before_run(self) -> None:
         self.max_progress = self.controller.task_manager.progress
 
     def after_step(self) -> None:
@@ -27,7 +26,7 @@ class CompletionRateEvaluator(BaseEvaluator):
         )
 
     def after_run(self) -> None:
-        durations = self.controller.task_manager.all_tasks.durations
+        durations = self.controller.task_manager.taskset.durations
         completion_rate = (
             self.controller.task_manager.num_succeeded_tasks
             / self.controller.task_manager.num_all_tasks
