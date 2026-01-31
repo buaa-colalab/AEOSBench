@@ -43,10 +43,8 @@ def generate_trajectory(
     metrics_path = trajectory_root / f'{i:05}.json'
 
     if metrics_path.exists():
-        metrics = json_load(str(metrics_path))
-        if metrics['CR'] > COMPLETION_RATE_THRESHOLD:
-            todd.logger.info('split=%s i=%s already exists', split, i)
-            return
+        todd.logger.info('split=%s i=%s already exists', split, i)
+        return
 
     taskset = TaskSet.load(str(tasks_path))
     constellation = Constellation.load(str(constellation_path))
@@ -63,7 +61,7 @@ def generate_trajectory(
             PowerUsageEvaluator(),
             TrajectoryLogger(work_dir=trajectory_root),
             ForbidTasksCallback(work_dir=trajectory_root),
-            FilterTaskCallback(work_dir=trajectory_root),
+            # FilterTaskCallback(work_dir=trajectory_root),
         ],
     )
     controller = Controller(
@@ -86,12 +84,11 @@ def generate_trajectory(
         forbidden_task_ids=forbidden_task_ids,
     )
     algorithm.prepare(environment=environment, task_manager=task_manager)
-    controller.run(algorithm)
+    controller.run(algorithm, progress_bar=False)
 
     metrics = controller.memo['metrics']
     todd.logger.info('split=%s i=%d metrics=%s', split, i, metrics)
-    if metrics['CR'] > COMPLETION_RATE_THRESHOLD:
-        json_dump(metrics, str(metrics_path))
+    json_dump(metrics, str(metrics_path))
 
 
 def generate_trajectories(split: str, n: int, *args, **kwargs) -> None:
@@ -113,7 +110,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    generate_trajectories('train', 50_000, args.previous_trajectories)
+    generate_trajectories('train', 25_000, args.previous_trajectories)
     generate_trajectories('val_seen', 500, args.previous_trajectories)
     generate_trajectories('val_unseen', 500, args.previous_trajectories)
     generate_trajectories('test', 1_000, args.previous_trajectories)

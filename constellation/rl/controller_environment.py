@@ -38,17 +38,16 @@ from constellation.environments import BasiliskEnvironment, BaseEnvironment
 from constellation.evaluators import (
     BaseEvaluator,
     CompletionRateEvaluator,
-    PCompletionRateEvaluator,
-    WCompletionRateEvaluator,
-    WPCompletionRateEvaluator,
     TurnAroundTimeEvaluator,
     PowerUsageEvaluator,
 )
 from constellation import TaskManager
-from constellation.callbacks.memo import Memo, get_memo
 from constellation.callbacks.base import BaseCallback
+from constellation.callbacks import ComposedCallback
 from constellation.controller import Controller
 from constellation.rl.environment import Observation, null_observation, Padding
+
+from todd.runners import Memo
 
 MAX_NUM_SATELLITES = 51
 MAX_NUM_TASKS = 302
@@ -98,8 +97,8 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         )
 
         self._annotations: list[int] = json_load(
-            str(ANNOTATIONS_ROOT / f'{split}.tiny.json'),
-        )
+            str(ANNOTATIONS_ROOT / f'{split}.json'),
+        )['ids']
         self._statistics: Statistics = torch.load(
             STATISTICS_PATH,
             weights_only=False,
@@ -107,17 +106,21 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
         self._padding = Padding()
         self._episode_step = 0
-        self._controller = None
+        self._controller: Controller | None = None
         self._last_num_succeeded_tasks = 0
+
+    def _require_controller(self) -> Controller:
+        if self._controller is None:
+            raise RuntimeError("Controller is not initialized")
+        return self._controller
 
     @property
     def info(self) -> Memo:
-        memo = Memo()
-        # print(self._controller.callbacks)
-        for evaluator in self._controller.callbacks:
-            evaluator.after_run(memo=memo, save_name=str(self._current_id))
-
-        return memo
+        _controller = self._require_controller()
+        # memo = Memo()
+        # # print(self._controller.callbacks)
+        _controller.callbacks.after_run()
+        return _controller.memo
 
     def _load_constellation(
         self,
@@ -126,7 +129,8 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         npt.NDArray[np.uint8],
         npt.NDArray[np.float32],
     ]:
-        constellation = self._controller.environment.get_constellation()
+        _controller = self._require_controller()
+        constellation = _controller.environment.get_constellation()
         sensor_type, static_data = constellation.static_to_tensor()
         sensor_enabled, dynamic_data = constellation.dynamic_to_tensor()
         data = torch.cat([static_data, dynamic_data], -1)
@@ -141,17 +145,18 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         npt.NDArray[np.uint8],
         npt.NDArray[np.float32],
     ]:
-        valid_tasks = self._controller.task_manager.ongoing_tasks
-        valid_labels = self._controller.task_manager.ongoing_flags
+        _controller = self._require_controller()
+        valid_tasks = _controller.task_manager.ongoing_tasks
+        valid_labels = _controller.task_manager.ongoing_flags
 
         sensor_type, static_data = valid_tasks.to_tensor()
 
         static_data = static_data.clone()
-        t = self._controller.environment.timer.time
+        t = _controller.environment.timer.time
         static_data[..., 0] -= t
         static_data[..., 1] -= t
 
-        progress = self._controller.task_manager.progress[valid_labels]
+        progress = _controller.task_manager.progress[valid_labels]
         dynamic_data = einops.rearrange(progress, 'nt -> nt 1')
 
         data = torch.cat([static_data, dynamic_data], -1)
@@ -165,13 +170,13 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             constellation_sensor_enabled,
             constellation_data,
         ) = self._load_constellation()
-
+        _controller = self._require_controller()
         tasks_sensor_type, tasks_data = self._load_tasks()
 
         observation = Observation(
-            num_satellites=self._controller.environment.num_satellites,
-            num_tasks=self._controller.task_manager.num_ongoing_tasks,
-            time_step=self._controller.environment.timer.time,
+            num_satellites=_controller.environment.num_satellites,
+            num_tasks=_controller.task_manager.num_ongoing_tasks,
+            time_step=_controller.environment.timer.time,
             constellation_sensor_type=cast(
                 npt.NDArray[np.uint8],
                 constellation_sensor_type - 1,
@@ -188,13 +193,14 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         return self._padding(observation)
 
     def _skip_idle(self, done) -> None:
-        while self._controller.task_manager.is_idle and not done:
+        _controller = self._require_controller()
+        while _controller.task_manager.is_idle and not done:
             self._take_actions(
-                np.full(self._controller._environment.num_satellites, -1)
+                np.full(_controller._environment.num_satellites, -1),
             )
 
     def _get_annotation(self) -> int:
-        return random.choice(self._annotations)
+        return random.choice(self._annotations['ids'])
 
     def reset(self, *args, **kwargs) -> tuple[Observation, dict[str, Any]]:
         super().reset(*args, **kwargs)
@@ -213,7 +219,7 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
             / f'{id_:05}.json'
         )
-        tasks: TaskSet[Task] = TaskSet.load(str(taskset_path))
+        tasks: TaskSet = TaskSet.load(str(taskset_path))
 
         simulator = BasiliskEnvironment(
             standard_time_init=TIMESTAMP,
@@ -227,20 +233,21 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         )
         self._last_num_succeeded_tasks = 0
 
-        callbacks = [
+        evaluators = [
             CompletionRateEvaluator(),
-            PCompletionRateEvaluator(),
-            WCompletionRateEvaluator(),
-            WPCompletionRateEvaluator(),
             TurnAroundTimeEvaluator(),
-            PowerUsageEvaluator()
+            PowerUsageEvaluator(),
         ]
+        callbacks = ComposedCallback(callbacks=evaluators)
 
         self._controller = Controller(
+            name='test',
             environment=simulator,
             task_manager=task_manager,
             callbacks=callbacks,
         )
+
+        callbacks.before_run()
 
         self._skip_idle(False)
 
@@ -252,17 +259,20 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         self,
         action: npt.NDArray[np.int32],
     ) -> tuple[Observation, float, bool, bool, dict[str, Any]]:
+        _controller = self._require_controller()
         self._episode_step += 1
 
-        task_ids = (action[:self._controller.environment.num_satellites]
-                    - 0).tolist()
+        task_ids = (action[:_controller.environment.num_satellites]
+                    - 1).tolist()
+        
+        # print("task_ids:", task_ids)
 
         self._take_actions(task_ids)
 
-        self._last_num_succeeded_tasks = self._controller.task_manager.num_succeeded_tasks
+        self._last_num_succeeded_tasks = _controller.task_manager.num_succeeded_tasks
 
-        terminated = self._controller.task_manager.all_closed
-        truncated = self._controller.environment.timer.time >= 3600
+        terminated = _controller.task_manager.all_closed
+        truncated = _controller.environment.timer.time >= 3600
         self._skip_idle(terminated or truncated)
 
         observation = (
@@ -279,10 +289,13 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         )
 
     def _take_actions(self, task_ids: npt.NDArray[np.int32]) -> None:
-        tasks = self._controller.task_manager.taskset
-        constellation = self._controller.environment.get_constellation()
+        _controller = self._require_controller()
+        tasks = _controller.task_manager.ongoing_tasks
+        constellation = _controller.environment.get_constellation()
+        # print("Taking actions:", task_ids,
+        #         "tasks available:", len(tasks),)
         target_locations = [
-            None if task_id == -1 else tasks[task_id].coordinate
+            None if task_id == -1 or task_id >= len(tasks) else tasks[task_id].coordinate # FIXME: a bug
             for task_id in task_ids
         ]
 
@@ -297,4 +310,4 @@ class ControllerEnvironment(gym.Env[Observation, npt.NDArray[np.uint16]]):
             for toggle, target_location in zip(toggles, target_locations)
         )
 
-        self._controller.step(actions, task_ids)
+        _controller.step(actions, task_ids)

@@ -18,9 +18,7 @@ def generate(split: str, n: int) -> None:
 
     trajectories_root = TRAJECTORIES_ROOT / split
     for i in annotations:
-        trajectory_path = (
-            trajectories_root / f'{i // 1000:02}' / f'{i:05}.json'
-        )
+        trajectory_path = trajectories_root / f'{i // 1000:02}/{i:05}.json'
         metrics.append(json_load(str(trajectory_path)))
 
     todd.logger.info(

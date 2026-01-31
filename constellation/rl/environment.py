@@ -40,9 +40,6 @@ from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     BaseEvaluator,
     CompletionRateEvaluator,
-    PCompletionRateEvaluator,
-    WCompletionRateEvaluator,
-    WPCompletionRateEvaluator,
     TurnAroundTimeEvaluator,
     PowerUsageEvaluator,
 )

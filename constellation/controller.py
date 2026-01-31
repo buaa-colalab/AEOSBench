@@ -82,12 +82,13 @@ class Controller:
         self,
         algorithm: BaseAlgorithm,
         *,
+        max_time_step: int = MAX_TIME_STEP,
         progress_bar: bool = True,
     ) -> None:
         self._memo['algorithm'] = algorithm
         self._callbacks.before_run()
 
-        for _ in trange(MAX_TIME_STEP, disable=not progress_bar):
+        for _ in trange(max_time_step, disable=not progress_bar):
             if self._callbacks.should_break():
                 break
 

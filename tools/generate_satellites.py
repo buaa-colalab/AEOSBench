@@ -25,7 +25,7 @@ TASKSET = TaskSet.load(str(TASKSET_PATH))
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--threshold', type=float, default=0.5)
+    parser.add_argument('--threshold', type=float, default=0.99)
     args = parser.parse_args()
     return args
 
@@ -70,7 +70,7 @@ def generate_satellites(
         algorithm.prepare(environment, task_manager)
 
         try:
-            controller.run(algorithm, progress_bar=False)
+            controller.run(algorithm, progress_bar=False, max_time_step=7200)
         except Exception as e:
             todd.logger.error("rank %d failed %d: %s", RANK, i, e)
             continue

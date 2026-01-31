@@ -23,10 +23,10 @@ TIMESTAMP = '20190101000000'
 
 INTERVAL = 1.  # seconds
 
-MAX_TIME_STEP = 3600
+MAX_TIME_STEP = 3600  # seconds
 
 DATA_ROOT = pathlib.Path('data')
-ANNOTATIONS_ROOT = DATA_ROOT / 'annotations.tabu.1'
+ANNOTATIONS_ROOT = DATA_ROOT / 'annotations'
 CONSTELLATIONS_ROOT = DATA_ROOT / 'constellations'
 ORBITS_ROOT = DATA_ROOT / 'orbits'
 SATELLITES_ROOT = DATA_ROOT / 'satellites'
@@ -38,5 +38,6 @@ STATISTICS_PATH = DATA_ROOT / 'statistics_new.pth'
 RADIUS_EARTH = 6378136.6  # in m
 MU_EARTH = 398600436000000.0  # in m^3/s^2
 ECCENTRICITY_EARTH = 0.0  # TODO
-
 MAX_OFF_NADIR_ANGLE = math.pi / 3  # 60 degrees
+# MAX_OFF_NADIR_ANGLE = math.pi / 4  # 45 degrees
+# MAX_OFF_NADIR_ANGLE = math.pi / 6  # 30 degrees

@@ -268,14 +268,13 @@ class MRPControl:
         return list(dataclasses.astuple(self))
 
     @classmethod
-    def sample(cls) -> Self:
-        k = random.uniform(0, 10)
-        return cls(
-            k,
-            random.uniform(0, 0.001),
-            random.uniform(2, 5) * k,
-            random.uniform(0, 0.001),
-        )
+    def sample(cls, inertia: Inertia, reaction_wheels: ReactionWheels) -> Self:
+        max_momentum, = {reaction_wheel.max_momentum for reaction_wheel in reaction_wheels}
+        k = random.uniform(2, 5) * max(inertia) / max_momentum
+        ki = random.uniform(0, 0.01)
+        p = random.uniform(2, 4) * k
+        integral_limit = random.uniform(0, 5) * ki
+        return cls(k, ki, p, integral_limit)
 
 
 class SatelliteDict(TypedDict):
@@ -376,6 +375,7 @@ class Satellite:
             ),
         )
         mass = random.uniform(50, 200)
+        reaction_wheels = ReactionWheel.sample()
         return cls(
             0,
             inertia,
@@ -386,8 +386,8 @@ class Satellite:
             MRP_SOLAR_PANEL,
             Sensor.sample_mrp(),
             MRP_BATTERY,
-            ReactionWheel.sample(),
-            MRPControl.sample(),
+            reaction_wheels,
+            MRPControl.sample(inertia, reaction_wheels),
             0.0,
             (0.0, 0.0, 0.0),
         )

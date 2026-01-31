@@ -215,7 +215,7 @@ class Decoder(InitWeightsMixin, nn.Module):
         cross_attention_mask = einops.repeat(
             tasks_mask,
             'b nt -> b ns nt',
-            ns=time_mask.shape[1],
+            ns=data.shape[1],
         )
         cross_attention_mask = torch.where(
             cross_attention_mask,
@@ -268,7 +268,6 @@ class Transformer(nn.Module):
         decoder_depth: int,
         decoder_num_heads: int,
         return_logits: bool = True,
-        with_time_model: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -305,11 +304,12 @@ class Transformer(nn.Module):
         self._time_model = TimeModel()
         self._time_projection = nn.Linear(1, 1)
 
-        self._time_model.requires_grad_(False)
+        self._time_model.requires_grad_(True)
         self._encoder.requires_grad_(False)
-        self._decoder.requires_grad_(True)
+        self._decoder.requires_grad_(False)
         self._time_projection.requires_grad_(True)
 
+        
     def forward(
         self,
         time_steps: torch.Tensor | Iterable[int],

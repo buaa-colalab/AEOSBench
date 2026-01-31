@@ -109,7 +109,7 @@ class Task:
         return cls(
             id_,
             0,
-            3600,
+            7200,
             10,
             Coordinate(
                 random.uniform(-10, 10),

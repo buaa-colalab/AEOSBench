@@ -22,6 +22,7 @@ from constellation import (
     STATISTICS_PATH,
     TASKSETS_ROOT,
     TRAJECTORIES_ROOT,
+    DATA_ROOT,
 )
 from constellation.data import Constellation, TaskSet
 
@@ -107,7 +108,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
 
         if annotation_file is None:
             annotation_file = f'{split}.json'
-        self._annotations: list[int] = json_load(
+        self._annotations: dict[str, list[int]] = json_load(
             str(ANNOTATIONS_ROOT / annotation_file),
         )
 
@@ -126,7 +127,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         return hasattr(self, '_statistics')
 
     def __len__(self) -> int:
-        return len(self._annotations)
+        return len(self._annotations['ids'])
 
     def _load_constellation(
         self,
@@ -192,7 +193,8 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         due_time_mask = static_data[..., 1] >= 0
         finished_mask = progress >= duration
         finished_mask, _ = finished_mask.cummax(0)
-        mask = release_time_mask & due_time_mask & ~finished_mask
+        mask = release_time_mask & due_time_mask
+        mask[1:] &= ~finished_mask[:-1] # FIXME
 
         return sensor_type, data, mask
 
@@ -204,10 +206,14 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         return actions['task_id'][indices]
 
     def __getitem__(self, index: int) -> Batch:
-        id_ = self._annotations[index]
+        id_ = self._annotations['ids'][index]
+        best_epoch_ = self._annotations['epochs'][index]
 
         trajectory: TrajectoryData = torch.load(
-            TRAJECTORIES_ROOT / self._split / f'{id_ // 1000:02}'
+            DATA_ROOT
+            / f'trajectories.{best_epoch_}'
+            / self._split
+            / f'{id_ // 1000:02}'
             / f'{id_:05}.pth',
         )
 
@@ -247,7 +253,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
             tasks_mask,
         ], -1)
         if not augmented_tasks_mask.gather(-1, actions_task_id + 1).all():
-            raise RuntimeError(f"Trajectory {index} ({id_}) is invalid")
+            raise RuntimeError(f"Trajectory.{best_epoch_} {index} ({id_}) is invalid")
 
         (
             constellation_sensor_type,
