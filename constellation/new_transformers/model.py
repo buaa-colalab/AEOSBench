@@ -305,8 +305,8 @@ class Transformer(nn.Module):
         self._time_projection = nn.Linear(1, 1)
 
         self._time_model.requires_grad_(True)
-        self._encoder.requires_grad_(False)
-        self._decoder.requires_grad_(False)
+        self._encoder.requires_grad_(True)
+        self._decoder.requires_grad_(True)
         self._time_projection.requires_grad_(True)
 
         
@@ -370,19 +370,6 @@ class Transformer(nn.Module):
             x = outputs
             return x
         null_logits, logits = outputs
-
-        # if self.with_time_model:
-        #     _, pred_mask = self._time_model.predict(
-        #         time_steps,
-        #         constellation_data,
-        #         constellation_mask,
-        #         tasks_data,
-        #         tasks_mask,
-        #     )
-        #     pred_mask = pred_mask.sigmoid() < 0.001
-        #     # pred_mask = pred_mask.any(-1)
-        #     # logits[pred_mask] = float('-inf')
-        #     GLOBALS['pred_mask'] = pred_mask
 
         return null_logits, logits
 

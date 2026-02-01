@@ -12,95 +12,74 @@ sudo apt install ffmpeg libpq-dev
 bash setup.sh
 ```
 
-## pre-steps
+## data
+
+If you want to use all data to reproduct our paper:
 
 ```bash
-bash tools/generate_satellites.sh
-PYTHONPATH=:${PYTHONPATH} python tools/generate_constellations_and_tasksets.py
+git clone git@hf.co:datasets/MessianX/AEOS-dataset ./data
+find ./data -type f -name '*.tar' -print0 | xargs -0 -n1 -I{} sh -c 'tar -xf "$1" -C "$(dirname "$1")"' _ {}
+```
 
-unzip -q data/orbits.zip -d data
-PYTHONPATH=:${PYTHONPATH} python tools/patch_constellations.py
+Or, you can just download the val_seen/val_unseen/test from the trajectories inside our hf repo and unzip them to only evaluate your own model:
 
-PYTHONPATH=:${PYTHONPATH} torchrun --nproc-per-node 2 tools/generate_trajectories.py
+```bash
+# TODO: urls
+# suppose you have download these requested data
+find ./data -type f -name '*.tar' -print0 | xargs -0 -n1 -I{} sh -c 'tar -xf "$1" -C "$(dirname "$1")"' _ {}
+```
 
+## Steps
 
-# train transformer model
-CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train refactor_test constellation/new_transformers/config.py
+### 1. Confirm the data
 
-# train time model
-CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train time_model_refactor constellation/new_transformers/config_timemodel.py
+The right file tree should be like this：
 
-# eval time model
-CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.val \
-    dir_name \
-    constellation/new_transformers/config_timemodel.py \
-    --load-from iter_20000
+```
+data/
+├── trajectories.1/
+│   ├── test/
+│   ├── train/
+│   │   ├── 00/         # contains pth and json files
+│   │   ├── 01/
+│   │   ├── ...
+│   ├── val_seen/
+│   └── val_unseen/
+├── trajectories.2/
+├── trajectories.3/
+├── annotations/
+│   ├── test.json
+│   ├── train.json
+│   ├── val_seen.json
+│   └── val_unseen.json
+├── constellations/
+│   ├── test/
+│   ├── train/
+│   ├── val_seen/
+│   └── val_unseen/
+├── orbits/
+├── satellites/
+└── tasksets/
+```
 
-PYTHONPATH="./" python -m constellation.rl.eval_with_controller --split test --num-episodes 3 --show-progress
+### 2. Train the model
 
-# eval all (using transformer)
+Use the command below to train our model:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train test constellation/new_transformers/config.py
+```
+
+This will continue till 200000 iters.
+
+### 3. Eval the model
+
+Use the command below to evaluate the model:
+
+```bash
 CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=1 RANK=0 python -m constellation.rl.eval_all \
     work_dir_name \
     constellation/rl/config_eval.py \
-    --load-model-from '/data/wlt/projects/RL/work_dirs/time_model_freeze.pth'
+    --load-model-from 'work_dirs/test/checkpoints/iter_100000/model.pth'
 ```
 
-## Data
-
-```bash
-PYTHONPATH=:${PYTHONPATH} python tools/generate_annotations.py
-PYTHONPATH=:${PYTHONPATH} python tools/generate_tabu_lists.py 400
-mv data/trajectories data/trajectories.tabu.1
-
-PYTHONPATH=:${PYTHONPATH} python tools/generate_trajectories.py 400 --tabu data/trajectories.tabu.1
-PYTHONPATH=:${PYTHONPATH} python tools/generate_tabu_lists.py 400 --merge data/trajectories.tabu.1
-mv data/trajectories data/trajectories.tabu.2
-
-PYTHONPATH=:${PYTHONPATH} python tools/generate_trajectories.py 400 --tabu data/trajectories.tabu.2
-
-PYTHONPATH=:${PYTHONPATH} python tools/generate_trajectories.py 400 --tabu data/trajectories.tabu.2
-
-PYTHONPATH=:${PYTHONPATH} python tools/test_baseline.py optimal 100
-```
-
-## .Installation
-
-```bash
-python -m constellation.controller
-torchrun --nproc_per_node=1 --master_port=5000 -m constellation.algorithms.deep.train debug configs/tmp.py
-```
-
-## Imitation learning
-
-```bash
-PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train new_data constellation/new_transformers/config.py
-
-CUDA_VISIBLE_DEVICES=2 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.train time_model_retry constellation/new_transformers/config_timemodel.py
-
-CUDA_VISIBLE_DEVICES=1 PYTHONPATH=:${PYTHONPATH} auto_torchrun -m constellation.new_transformers.val \
-    time_model_retry \
-    constellation/new_transformers/config_timemodel.py \
-    --load-from iter_20000
-```
-
-## RL
-
-```bash
-CUDA_VISIBLE_DEVICES=0,1,3,4,5,6,7 auto_torchrun -m constellation.rl.eval_all \
-    new_data \
-    rl/config_eval.py \
-    --load-model-from work_dirs/new_data/iter_110000.pth
-
-CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=4 RANK=0 python -m constellation.rl.eval_all \
-    time_50k \
-    rl/config_eval.py \
-    --load-model-from '/data/wlt/projects/RL/work_dirs/time_model_freeze.pth'
-
-python -m rl.merge_csvs work_dirs/rl_eval_new_data/completion_rates.csv work_dirs/rl_eval_new_data/completion_rates_*
-```
-
-## TODO
-
-rename tasks to taskset
-rename timestep to time_step
-test anaconda
