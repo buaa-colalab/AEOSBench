@@ -17,9 +17,5 @@ pipenv run pip install \
     wheel \
     gymnasium \
     "stable-baselines3[extra]" \
-    pymap3d
-
-cd third_party/basilisk
-sudo apt install swig
-# git checkout c3624e0
-# CMAKE_TLS_VERIFY=0 pipenv run python conanfile.py
+    pymap3d \
+    "bsk>=2.9.0"

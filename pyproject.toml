@@ -13,8 +13,8 @@ classifiers = [
     'License :: OSI Approved :: Apache Software License',
     'Operating System :: OS Independent',
 ]
-dynamic = [
-    'dependencies',
+dependencies = [
+    'bsk>=2.9.0',
 ]
 
 [project.license]
