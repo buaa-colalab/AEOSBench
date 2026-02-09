@@ -319,11 +319,12 @@ class BasiliskSatellite:
         )
 
         # mrp_control
-        rw_params_message = self._rw_factory.getConfigMessage()
+        # Store as instance variable to prevent garbage collection (bsk v2.9.0+)
+        self._rw_params_message = self._rw_factory.getConfigMessage()
         self._mrp_control.guidInMsg.subscribeTo(
             self._pointing_guide.attGuidOutMsg,
         )
-        self._mrp_control.rwParamsInMsg.subscribeTo(rw_params_message)
+        self._mrp_control.rwParamsInMsg.subscribeTo(self._rw_params_message)
         self._mrp_control.rwSpeedsInMsg.subscribeTo(
             self._rw_state_effector.rwSpeedOutMsg,
         )
@@ -332,7 +333,7 @@ class BasiliskSatellite:
         self._rw_motor_torque.vehControlInMsg.subscribeTo(
             self._mrp_control.cmdTorqueOutMsg,
         )
-        self._rw_motor_torque.rwParamsInMsg.subscribeTo(rw_params_message)
+        self._rw_motor_torque.rwParamsInMsg.subscribeTo(self._rw_params_message)
         self._rw_state_effector.rwMotorCmdInMsg.subscribeTo(
             self._rw_motor_torque.rwMotorTorqueOutMsg,
         )
