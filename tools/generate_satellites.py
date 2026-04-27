@@ -4,12 +4,7 @@ import pathlib
 
 import todd
 
-from constellation import (
-    SATELLITES_ROOT,
-    TASKSETS_ROOT,
-    Controller,
-    TaskManager,
-)
+from constellation import SATELLITES_ROOT, TASKSETS_ROOT, Controller, TaskManager
 from constellation.algorithms import OptimalAlgorithm
 from constellation.callbacks import ComposedCallback
 from constellation.data import Constellation, TaskSet
@@ -37,10 +32,7 @@ def generate_satellites(
 ) -> None:
     satellites_root: pathlib.Path = SATELLITES_ROOT / split
     max_id = max(
-        (
-            int(satellite_path.stem)
-            for satellite_path in satellites_root.iterdir()
-        ),
+        (int(satellite_path.stem) for satellite_path in satellites_root.iterdir()),
         default=-1,
     )
 

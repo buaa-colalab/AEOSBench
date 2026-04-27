@@ -2,8 +2,8 @@ __all__ = [
     'Environment',
 ]
 
-from functools import partial
 import random
+from functools import partial
 from typing import Any, Literal, TypedDict, cast, overload
 from typing_extensions import Self
 
@@ -13,37 +13,27 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from gymnasium import spaces
-from constellation import STATISTICS_PATH
-from constellation.new_transformers import Statistics
-from constellation.new_transformers import SATELLITE_DIM, TASK_DIM
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from todd.patches.py_ import json_load
-from constellation.new_transformers.model import GLOBALS
 
 from constellation import (
     ANNOTATIONS_ROOT,
     CONSTELLATIONS_ROOT,
-    DATA_ROOT,
     MAX_TIME_STEP,
+    STATISTICS_PATH,
     TASKSETS_ROOT,
     TIMESTAMP,
+    TaskManager,
 )
-from constellation.data import (
-    Action,
-    Actions,
-    Constellation,
-    SensorType,
-    Task,
-    TaskSet,
-)
+from constellation.data import Action, Actions, Constellation, SensorType, Task, TaskSet
 from constellation.environments import BasiliskEnvironment
 from constellation.evaluators import (
     BaseEvaluator,
     CompletionRateEvaluator,
-    TurnAroundTimeEvaluator,
     PowerUsageEvaluator,
+    TurnAroundTimeEvaluator,
 )
-from constellation import TaskManager
+from constellation.new_transformers import SATELLITE_DIM, TASK_DIM, Statistics
 
 MAX_NUM_SATELLITES = 51
 MAX_NUM_TASKS = 302  # TODO check 301
@@ -133,9 +123,7 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
     def build(cls, world_size: int, *args, **kwargs) -> Self | SubprocVecEnv:
         if world_size == 0:
             return cls(*args, **kwargs)
-        return SubprocVecEnv([
-            partial(cls, *args, **kwargs) for _ in range(world_size)
-        ])
+        return SubprocVecEnv([partial(cls, *args, **kwargs) for _ in range(world_size)])
 
     def __init__(self, *args, split: str, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -182,11 +170,7 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
     @property
     def info(self) -> dict[str, float]:
-        return {
-            "metrics": [
-                e.evaluate(self._task_manager) for e in self._evaluators
-            ]
-        }
+        return {"metrics": [e.evaluate(self._task_manager) for e in self._evaluators]}
 
     def evaluator_log_progress(self, actions: list[int]) -> None:
         for evaluator in self._evaluators:
@@ -278,14 +262,12 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
         tasks = self._task_manager.valid_tasks
         target_locations = [
-            None if task_id == -1 else tasks[task_id].coordinate
-            for task_id in task_ids
+            None if task_id == -1 else tasks[task_id].coordinate for task_id in task_ids
         ]
 
         if hasattr(self, '_pred_mask'):
             for constellation_id, task_id in enumerate(task_ids):
-                if task_id != -1 and self._pred_mask[constellation_id,
-                                                     task_id]:
+                if task_id != -1 and self._pred_mask[constellation_id, task_id]:
                     task_ids[constellation_id] = -1
             delattr(self, '_pred_mask')
 
@@ -317,14 +299,12 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         id_ = self._get_annotation()
 
         constellation_path = (
-            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         constellation = Constellation.load(str(constellation_path))
 
         taskset_path = (
-            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         tasks: TaskSet[Task] = TaskSet.load(str(taskset_path))
 
@@ -346,11 +326,8 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
 
         self._evaluators: list[BaseEvaluator] = [
             CompletionRateEvaluator(),
-            PCompletionRateEvaluator(),
-            WCompletionRateEvaluator(),
-            WPCompletionRateEvaluator(),
             TurnAroundTimeEvaluator(),
-            PowerUsageEvaluator()
+            PowerUsageEvaluator(),
         ]
 
         self._skip_idle()
@@ -386,8 +363,7 @@ class Environment(gym.Env[Observation, npt.NDArray[np.uint16]]):
         truncated = self._simulator.timer.time >= self._simulator.end_time
 
         observation = (
-            null_observation
-            if terminated or truncated else self._get_observation()
+            null_observation if terminated or truncated else self._get_observation()
         )
 
         return (

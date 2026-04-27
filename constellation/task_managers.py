@@ -42,9 +42,7 @@ class TaskManager:
         )
 
     def _filter_tasks(self, flags: torch.Tensor) -> TaskSet:
-        return TaskSet(
-            task for task, flag in zip(self._taskset, flags) if flag
-        )
+        return TaskSet(task for task, flag in zip(self._taskset, flags) if flag)
 
     @property
     def unreleased_flags(self) -> torch.Tensor:

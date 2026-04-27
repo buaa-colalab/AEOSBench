@@ -2,7 +2,6 @@ __all__ = [
     'ForbidTasksCallback',
 ]
 
-import einops
 import torch
 
 from .base import BaseLogger

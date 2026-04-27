@@ -1,17 +1,16 @@
 import argparse
 import atexit
-import signal
 import importlib
 import os
 import pathlib
-import pickle
+import signal
 from functools import partial
 from itertools import count
 from typing import Any
 
 import numpy as np
-import pandas as pd
 import numpy.typing as npt
+import pandas as pd
 import todd
 import torch
 from stable_baselines3 import PPO
@@ -20,11 +19,11 @@ from todd.configs import PyConfig
 from todd.patches.py_ import DictAction, json_dump
 from todd.utils import init_seed
 
-from .environment import Environment, Observation, null_observation
-from .controller_environment import ControllerEnvironment
-from .policy import Policy
-from constellation.loggers import BaseLogger, TrajectoryLogger, VisualizationLogger
 from constellation.new_transformers.model import GLOBALS
+
+from .controller_environment import ControllerEnvironment
+from .environment import Observation, null_observation
+from .policy import Policy
 
 COMPLETION_RATE_THRESHOLD = 0.01
 
@@ -75,8 +74,8 @@ class EvalEnvironment(ControllerEnvironment):
             completion_rates: dict[int, float] = \
                 df['completion_rate'].to_dict()
             self._annotations = [
-                annotation for annotation in self._annotations if
-                completion_rates.get(annotation, 0) < COMPLETION_RATE_THRESHOLD
+                annotation for annotation in self._annotations
+                if completion_rates.get(annotation, 0) < COMPLETION_RATE_THRESHOLD
             ]
 
     @property
@@ -95,7 +94,7 @@ class EvalEnvironment(ControllerEnvironment):
             id_ = self._get_annotation()
             save_dir = self._gen_trajectory_dir / f'{id_ // 1000:02d}'
             save_dir.mkdir(parents=True, exist_ok=True)
-            save_path = save_dir / f'{id_:05d}.pth'
+            # save_path = save_dir / f'{id_:05d}.pth'
             # self._logger.pth_dump(save_path)
 
         self._counter += 1
@@ -125,8 +124,11 @@ class EvalEnvironment(ControllerEnvironment):
         if self.all_done:
             return null_observation, 0.0, False, False, dict(all_done=True)
 
-        if self._controller.task_manager.progress.any(
-        ) and self._controller.environment.timer.time % 50 == 0 and self._controller.environment.timer.time <= 1800:
+        _timer_time = self._controller.environment.timer.time
+        if (
+            self._controller.task_manager.progress.any() and _timer_time % 50 == 0
+            and _timer_time <= 1800
+        ):
             todd.logger.info(
                 "env_rank %s sim_step %d progress_sum %d finished_num %d",
                 self._rank,
@@ -142,9 +144,7 @@ class EvalEnvironment(ControllerEnvironment):
         #     is_visible=self._simulator.is_visible(self._task_manager.tasks),
         # )
 
-        observation, reward, terminated, truncated, info = (
-            super().step(action)
-        )
+        observation, reward, terminated, truncated, info = (super().step(action))
 
         id_ = self._get_annotation()
         info.update(id=id_)

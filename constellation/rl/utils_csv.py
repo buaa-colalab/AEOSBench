@@ -1,10 +1,8 @@
 import argparse
 import pathlib
 from statistics import mean
-import pandas as pd
-import torch
 
-from constellation.new_transformers.dataset import Annotation
+import pandas as pd
 
 # def pth_to_csv(pth_path) -> None:
 #     completion_rate_pth = torch.load(pth_path, weights_only=False)
@@ -53,16 +51,15 @@ def main() -> None:
              tasks_id), completion_rate in combined_completion_rates.items():
             f.write(f"{constellation_id},{tasks_id},{completion_rate}\n")
 
-    print(
-        f"Mean combined_completion_rates: {mean(combined_completion_rates.values())}"
-    )
+    print(f"Mean combined_completion_rates: {mean(combined_completion_rates.values())}")
     filtered_values = [
         value for value in combined_completion_rates.values() if value >= 0.05
     ]
     if filtered_values:
         print(
             f"Mean combined_completion_rates "
-            f"(filtered >= 0.05, {len(filtered_values)}/{len(combined_completion_rates)}): "
+            f"(filtered >= 0.05, "
+            f"{len(filtered_values)}/{len(combined_completion_rates)}): "
             f"{mean(filtered_values)}"
         )
     else:

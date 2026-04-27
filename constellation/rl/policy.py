@@ -3,13 +3,14 @@ from typing import NamedTuple, TypedDict, cast
 import einops
 import todd
 import torch
-from constellation.new_transformers import Model as ActorModel
 from stable_baselines3.common.distributions import Distribution
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from todd.patches.torch import load_state_dict, load_state_dict_
 from torch import nn
 from torch.distributions import Categorical
+
+from constellation.new_transformers import Model as ActorModel
 
 from .critic import Model as CriticModel
 from .environment import MAX_NUM_SATELLITES, MAX_NUM_TASKS
@@ -66,13 +67,10 @@ class FeatureExtractor(BaseFeaturesExtractor):
         )
 
         constellation_sensor_enabled = (
-            observation['constellation_sensor_enabled']
-            [:, :max_num_satellites].int()
+            observation['constellation_sensor_enabled'][:, :max_num_satellites].int()
         )
 
-        constellation_data = (
-            observation['constellation_data'][:, :max_num_satellites]
-        )
+        constellation_data = (observation['constellation_data'][:, :max_num_satellites])
 
         constellation_mask = torch.zeros(
             [num_satellites.shape[0], max_num_satellites],

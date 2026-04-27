@@ -3,6 +3,7 @@ __all__ = [
 ]
 
 import torch
+
 from .base import BaseEvaluator
 
 
@@ -35,6 +36,4 @@ class TurnAroundTimeEvaluator(BaseEvaluator):
     def after_run(self) -> None:
         release_times = self.controller.task_manager.taskset.release_times
         turn_around_time = self.completion_time - release_times
-        self.metrics['TAT'] = (
-            turn_around_time[self.succeeded_flags].mean().item()
-        )
+        self.metrics['TAT'] = (turn_around_time[self.succeeded_flags].mean().item())

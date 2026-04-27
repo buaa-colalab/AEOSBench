@@ -82,4 +82,3 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=1 RANK=0 python -m constellation.rl.eval_all \
     constellation/rl/config_eval.py \
     --load-model-from 'work_dirs/test/checkpoints/iter_100000/model.pth'
 ```
-

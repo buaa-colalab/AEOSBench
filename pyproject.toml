@@ -47,6 +47,7 @@ todd = [
 in-place = true
 
 [tool.yapf]
+column_limit = 89
 allow_split_before_dict_value = false
 coalesce_brackets = true
 dedent_closing_brackets = true
@@ -62,7 +63,7 @@ profile = 'hug'
 src_paths = [
     'constellation',
 ]
-line_length = 79
+line_length = 89
 multi_line_output = 3
 
 [tool.pydocstyle]
@@ -128,7 +129,7 @@ generated-members = [
 
 [tool.pylint.format]
 expected-line-ending-format = 'LF'
-max-line-length = 79
+max-line-length = 89
 
 [tool.bandit]
 skips = [

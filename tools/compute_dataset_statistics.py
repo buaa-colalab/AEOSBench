@@ -1,10 +1,10 @@
-from constellation import MAX_TIME_STEP, DATA_ROOT
-from constellation import STATISTICS_PATH
-from constellation.new_transformers.dataset import Dataset, Batch, Statistics
-from todd.utils import Statistician
-from tqdm import tqdm
 import einops
 import torch
+from todd.utils import Statistician
+from tqdm import tqdm
+
+from constellation import MAX_TIME_STEP, STATISTICS_PATH
+from constellation.new_transformers.dataset import Batch, Dataset, Statistics
 
 CHUNK_SIZE = 10_000
 

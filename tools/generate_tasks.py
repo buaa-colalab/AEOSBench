@@ -5,8 +5,6 @@ import numpy as np
 
 
 def kepler_to_cartesian(a, e, i, omega, w, M):
-    mu = 3.986004418e14  # m^3/s^2
-
     i = np.radians(i)
     omega = np.radians(omega)
     w = np.radians(w)
@@ -23,11 +21,9 @@ def kepler_to_cartesian(a, e, i, omega, w, M):
     R3_omega = np.array([[np.cos(omega), -np.sin(omega), 0],
                          [np.sin(omega), np.cos(omega), 0], [0, 0, 1]])
 
-    R1_i = np.array([[1, 0, 0], [0, np.cos(i), -np.sin(i)],
-                     [0, np.sin(i), np.cos(i)]])
+    R1_i = np.array([[1, 0, 0], [0, np.cos(i), -np.sin(i)], [0, np.sin(i), np.cos(i)]])
 
-    R3_w = np.array([[np.cos(w), -np.sin(w), 0], [np.sin(w),
-                                                  np.cos(w), 0], [0, 0, 1]])
+    R3_w = np.array([[np.cos(w), -np.sin(w), 0], [np.sin(w), np.cos(w), 0], [0, 0, 1]])
 
     r_orbit = np.array([x, y, 0])
     r_eci = R3_omega @ R1_i @ R3_w @ r_orbit
@@ -40,9 +36,7 @@ def generate_ground_track(orbit_params, num_points=100):
     mu = 3.986004418e14
     a = orbit_params['semi_major_axis']
     n = np.sqrt(mu / a**3)  # 平均运动，rad/s
-    omega_earth = np.radians(360) / (
-        23 * 3600 + 56 * 60 + 4.09053
-    )  # 地球自转角速度，rad/s
+    omega_earth = np.radians(360) / (23 * 3600 + 56 * 60 + 4.09053)  # 地球自转角速度，rad/s
 
     for M in np.linspace(0, 360, num_points):
         M_rad = np.radians(M)

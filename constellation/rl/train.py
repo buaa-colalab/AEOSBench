@@ -3,13 +3,13 @@ import importlib
 import pathlib
 from typing import cast
 
+import todd
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
-import todd
+from todd.bases.registries import Item
 from todd.configs import PyConfig
 from todd.patches.py_ import DictAction, descendant_classes
 from todd.utils import init_seed
-from todd.bases.registries import Item
 
 from .environment import Environment
 from .policy import Policy
@@ -42,8 +42,9 @@ def parse_args() -> argparse.Namespace:
 CUDA_VISIBLE_DEVICES=-1 python -m rl.train \
     rl_loaded \
     rl/config.py \
-    --load-model-from '/data/wlt/projects/Constellation/work_dirs/vit_b/checkpoints/iter_20000/model.pth'
-'''
+    --load-model-from \
+    '/data/wlt/projects/Constellation/work_dirs/vit_b/checkpoints/iter_20000/model.pth'
+'''  # noqa: E501
 
 
 def main() -> None:
@@ -68,9 +69,7 @@ def main() -> None:
 
     algorithm.learn(
         **config.learn,
-        callback=[
-            CallbackRegistry.build(callback) for callback in config.callbacks
-        ],
+        callback=[CallbackRegistry.build(callback) for callback in config.callbacks],
     )
     algorithm.save(args.name)
 

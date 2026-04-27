@@ -17,24 +17,19 @@ from Basilisk.simulation.eclipse import Eclipse
 from Basilisk.simulation.groundLocation import GroundLocation
 from Basilisk.simulation.groundMapping import GroundMapping
 from Basilisk.simulation.ReactionWheelPower import ReactionWheelPower
-from Basilisk.simulation.reactionWheelStateEffector import (
-    ReactionWheelStateEffector,
-)
+from Basilisk.simulation.reactionWheelStateEffector import ReactionWheelStateEffector
 from Basilisk.simulation.simpleBattery import SimpleBattery
 from Basilisk.simulation.simpleNav import SimpleNav
 from Basilisk.simulation.simplePowerSink import SimplePowerSink
 from Basilisk.simulation.simpleSolarPanel import SimpleSolarPanel
 from Basilisk.simulation.spacecraft import HubEffector, Spacecraft
 from Basilisk.utilities import macros, orbitalMotion, unitTestSupport
-from Basilisk.utilities.simIncludeGravBody import (
-    gravBodyFactory,
-    spiceInterface,
-)
+from Basilisk.utilities.simIncludeGravBody import gravBodyFactory, spiceInterface
 from Basilisk.utilities.simIncludeRW import rwFactory
 from Basilisk.utilities.simulationArchTypes import ProcessBaseClass
 from Basilisk.utilities.SimulationBaseClass import SimBaseClass
 
-from ...constants import INTERVAL
+from ...constants import INTERVAL, MU_EARTH, RADIUS_EARTH
 from ...data import (
     Battery,
     MRPControl,
@@ -46,7 +41,6 @@ from ...data import (
 )
 from ...data.constellations import SensorType
 from .constants import IDENTITY_MATRIX_3, UNIT_VECTOR_Z
-from ...constants import MU_EARTH, RADIUS_EARTH
 
 
 class BasiliskSatellite:
@@ -239,8 +233,7 @@ class BasiliskSatellite:
         rw_state_effector.ModelTag = f'rw_state_effector-{self._id}'
         return rw_state_effector
 
-    def setup_rw_power_list(self,
-                            satellite: Satellite) -> list[ReactionWheelPower]:
+    def setup_rw_power_list(self, satellite: Satellite) -> list[ReactionWheelPower]:
         rw_power_list: list[ReactionWheelPower] = []
         for i, reaction_wheel in enumerate(satellite.reaction_wheels):
             rw_power = ReactionWheelPower()

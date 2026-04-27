@@ -19,10 +19,9 @@ from todd.utils import NestedTensorCollectionUtils
 from constellation import (
     ANNOTATIONS_ROOT,
     CONSTELLATIONS_ROOT,
+    DATA_ROOT,
     STATISTICS_PATH,
     TASKSETS_ROOT,
-    TRAJECTORIES_ROOT,
-    DATA_ROOT,
 )
 from constellation.data import Constellation, TaskSet
 
@@ -139,8 +138,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         dynamic_data = constellation['data'][indices]
 
         constellation_path = (
-            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         sensor_type, static_data = Constellation.load(
             str(constellation_path),
@@ -171,8 +169,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         t = progress.shape[0]
 
         taskset_path = (
-            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         sensor_type, static_data = TaskSet.load(str(taskset_path)).to_tensor()
         duration = static_data[..., 2]
@@ -194,7 +191,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         finished_mask = progress >= duration
         finished_mask, _ = finished_mask.cummax(0)
         mask = release_time_mask & due_time_mask
-        mask[1:] &= ~finished_mask[:-1] # FIXME
+        mask[1:] &= ~finished_mask[:-1]  # FIXME
 
         return sensor_type, data, mask
 
@@ -210,10 +207,7 @@ class Dataset(torch.utils.data.Dataset[Batch]):
         best_epoch_ = self._annotations['epochs'][index]
 
         trajectory: TrajectoryData = torch.load(
-            DATA_ROOT
-            / f'trajectories.{best_epoch_}'
-            / self._split
-            / f'{id_ // 1000:02}'
+            DATA_ROOT / f'trajectories.{best_epoch_}' / self._split / f'{id_ // 1000:02}'
             / f'{id_:05}.pth',
         )
 

@@ -23,9 +23,7 @@ def patch_constellations(split: str, n: int) -> None:
 
     constellations_root = CONSTELLATIONS_ROOT / split
     for i in trange(n):
-        constellation_path = (
-            constellations_root / f'{i // 1000:02}/{i:05}.json'
-        )
+        constellation_path = (constellations_root / f'{i // 1000:02}/{i:05}.json')
         constellation_dict = json_load(str(constellation_path))
         patch_constellation(constellation_dict, orbit_dicts)
         json_dump(constellation_dict, str(constellation_path))

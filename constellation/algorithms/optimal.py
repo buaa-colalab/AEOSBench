@@ -3,7 +3,6 @@ __all__ = [
 ]
 
 import math
-import pathlib
 
 import einops
 import torch
@@ -71,8 +70,7 @@ class OptimalAlgorithm(BaseAlgorithm):
             return default_task_indices, default_assignment
 
         taskset_eci = (
-            earth_rotation.new_tensor(taskset.coordinates_ecef)
-            @ earth_rotation
+            earth_rotation.new_tensor(taskset.coordinates_ecef) @ earth_rotation
         )
         constellation_eci = constellation.coordinates_eci
 
@@ -91,9 +89,7 @@ class OptimalAlgorithm(BaseAlgorithm):
             forbidden_mask = torch.any(forbidden_task_ids == taskset.ids, 0)
             satellite_task_distance[forbidden_mask] = float('inf')
 
-        greedy_distance, greedy_task_indices = (
-            satellite_task_distance.min(dim=1)
-        )
+        greedy_distance, greedy_task_indices = (satellite_task_distance.min(dim=1))
         greedy_valid_mask = self._check_constraints(
             greedy_distance,
             orbital_radius,
@@ -109,16 +105,16 @@ class OptimalAlgorithm(BaseAlgorithm):
         assignment = torch.where(greedy_valid_mask, task_ids[greedy_task_indices], -1)  # noqa: E501 yapf: disable
 
         restorable_mask, restorable_task_indices = torch.max(
-            einops.rearrange(previous_assignment, 'ns -> ns 1') ==
-            einops.rearrange(task_ids, 'nt -> 1 nt'),
+            einops.rearrange(previous_assignment,
+                             'ns -> ns 1') == einops.rearrange(task_ids, 'nt -> 1 nt'),
             dim=1,
         )
         if not restorable_mask.any():
             return task_indices, assignment
 
         restorable_task_indices = restorable_task_indices[restorable_mask]
-        restorable_distance = satellite_task_distance[greedy_valid_mask]\
-            [restorable_mask, restorable_task_indices]
+        restorable_distance = satellite_task_distance[greedy_valid_mask][
+            restorable_mask, restorable_task_indices]
         restorable_valid_mask = self._check_constraints(
             restorable_distance,
             orbital_radius[greedy_valid_mask][restorable_mask],
@@ -126,18 +122,14 @@ class OptimalAlgorithm(BaseAlgorithm):
         if not restorable_valid_mask.any():
             return task_indices, assignment
 
-        restorable_task_indices = (
-            restorable_task_indices[restorable_valid_mask]
-        )
+        restorable_task_indices = (restorable_task_indices[restorable_valid_mask])
 
         # NOTE: do not assign through multiple indexing, as it triggers clones
         restorable_satellite_indices = torch.arange(
             len(constellation),
         )[greedy_valid_mask][restorable_mask][restorable_valid_mask]
         task_indices[restorable_satellite_indices] = restorable_task_indices
-        assignment[restorable_satellite_indices] = (
-            task_ids[restorable_task_indices]
-        )
+        assignment[restorable_satellite_indices] = (task_ids[restorable_task_indices])
 
         return task_indices, assignment
 
@@ -158,11 +150,9 @@ class OptimalAlgorithm(BaseAlgorithm):
             Action(
                 toggle=not satellite.sensor.enabled,
                 target_location=(
-                    None if task_index ==
-                    -1 else taskset[task_index].coordinate
+                    None if task_index == -1 else taskset[task_index].coordinate
                 ),
-            ) for satellite, task_index in
-            zip(constellation.sort(), task_indices)
+            ) for satellite, task_index in zip(constellation.sort(), task_indices)
         )
 
         return actions, assignment.tolist()

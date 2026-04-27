@@ -5,11 +5,11 @@ from functools import partial
 
 import todd
 import torch
-from constellation.new_transformers.dataset import TrajectoryData
 from todd.patches.py_ import json_dump, json_load
 
 from constellation import ANNOTATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
 from constellation.data import Task, TaskSet
+from constellation.new_transformers.dataset import TrajectoryData
 
 
 def get_tabu_list(failed: set[int], actions: list[int]) -> list[int]:
@@ -71,9 +71,7 @@ def generate_tabu_list(
     )
 
     if merge is not None:
-        previous_tabu_path = (
-            merge / split / f'{i // 1000:02}' / f'{i:05}.tabu.json'
-        )
+        previous_tabu_path = (merge / split / f'{i // 1000:02}' / f'{i:05}.tabu.json')
         previous_tabu = json_load(str(previous_tabu_path))
         assert len(tabu) == len(previous_tabu)
         for tabu_, previous_tabu_ in zip(tabu, previous_tabu):

@@ -1,25 +1,24 @@
-from asyncio import tasks
-from typing import Any, Iterable
+from typing import Iterable
+
 import einops
 import todd
 import torch
+from todd.models.losses import CrossEntropyLoss, MSELoss
+from todd.models.modules import sinusoidal_position_embedding
+from todd.models.modules.transformer import Block
+from todd.patches.torch import Sequential
+from todd.registries import InitWeightsMixin
+from todd.runners import BaseRunner, Memo
+from todd.runners.callbacks import TensorBoardCallback
 from torch import nn
 
-from todd.models.modules.transformer import Block
-from todd.models.modules import sinusoidal_position_embedding
-from todd.patches.torch import Sequential
-from todd.models.losses import CrossEntropyLoss, MSELoss
-from todd.registries import InitWeightsMixin
+from constellation import MAX_TIME_STEP
 from constellation.data import SensorType
+
+from .constants import SATELLITE_DIM, TASK_DIM
 from .dataset import Batch
 from .registries import ConstellationModelRegistry
 from .time_model import TimeModel
-from todd.runners import Memo, BaseRunner
-from todd.registries import InitWeightsMixin
-from todd.runners.callbacks import TensorBoardCallback
-from constellation import MAX_TIME_STEP
-from torch.distributions import Categorical
-from .constants import SATELLITE_DIM, TASK_DIM
 
 GLOBALS = dict()
 
@@ -43,8 +42,7 @@ class Encoder(nn.Module):
 
         self._data_embedding = nn.Linear(data_dim, data_embedding_dim)
         self._in_projector = nn.Linear(
-            time_embedding_dim + sensor_type_embedding_dim
-            + data_embedding_dim,
+            time_embedding_dim + sensor_type_embedding_dim + data_embedding_dim,
             width,
         )
         self._blocks = Sequential(
@@ -152,16 +150,13 @@ class Decoder(InitWeightsMixin, nn.Module):
         self._data_embedding = nn.Linear(data_dim, data_embedding_dim)
 
         self._in_projector = nn.Linear(
-            time_embedding_dim + sensor_type_embedding_dim
-            + sensor_enabled_embedding_dim + data_embedding_dim,
+            time_embedding_dim + sensor_type_embedding_dim + sensor_enabled_embedding_dim
+            + data_embedding_dim,
             width,
         )
 
         self._blocks = Sequential(
-            *[
-                DecoderBlock(width=width, num_heads=num_heads)
-                for _ in range(depth)
-            ],
+            *[DecoderBlock(width=width, num_heads=num_heads) for _ in range(depth)],
         )
         self._norm = nn.LayerNorm(width)
 
@@ -309,7 +304,6 @@ class Transformer(nn.Module):
         self._decoder.requires_grad_(True)
         self._time_projection.requires_grad_(True)
 
-        
     def forward(
         self,
         time_steps: torch.Tensor | Iterable[int],

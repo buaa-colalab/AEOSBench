@@ -4,13 +4,13 @@ __all__ = [
 
 import argparse
 import pathlib
-
-from todd.configs import PyConfig
-from torch import nn
-from todd.runners import BaseRunner
-from todd.patches.torch import get_rank
 import sys
 from typing import cast
+
+from todd.configs import PyConfig
+from todd.patches.torch import get_rank
+from todd.runners import BaseRunner
+from torch import nn
 
 
 def log(

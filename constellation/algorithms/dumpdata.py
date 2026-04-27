@@ -2,8 +2,7 @@ import csv
 import json
 
 with open(
-    '/data/hhl/Constellation/xyh/Constellation/work_dirs/exp/visualization.json',
-    'r'
+    '/data/hhl/Constellation/xyh/Constellation/work_dirs/exp/visualization.json', 'r'
 ) as f:
     data = json.load(f)
 
@@ -19,16 +18,13 @@ for sat_id in range(max_sats):
     prefix = f'satellite{sat_id}_'
     headers.append(prefix + 'id')
     headers.extend([
-        prefix + 'eciLocation_x', prefix + 'eciLocation_y',
-        prefix + 'eciLocation_z'
+        prefix + 'eciLocation_x', prefix + 'eciLocation_y', prefix + 'eciLocation_z'
     ])
     headers.extend([
-        prefix + 'eciVelocity_x', prefix + 'eciVelocity_y',
-        prefix + 'eciVelocity_z'
+        prefix + 'eciVelocity_x', prefix + 'eciVelocity_y', prefix + 'eciVelocity_z'
     ])
     headers.extend([
-        prefix + 'mrpAttitude_x', prefix + 'mrpAttitude_y',
-        prefix + 'mrpAttitude_z'
+        prefix + 'mrpAttitude_x', prefix + 'mrpAttitude_y', prefix + 'mrpAttitude_z'
     ])
 
 # 动态列
@@ -36,8 +32,7 @@ for task_id in range(max_tasks):
     prefix = f'task{task_id}_'
     headers.extend([prefix + 'taskId', prefix + 'sensorType'])
     headers.extend([
-        prefix + 'ecefLocation_x', prefix + 'ecefLocation_y',
-        prefix + 'ecefLocation_z'
+        prefix + 'ecefLocation_x', prefix + 'ecefLocation_y', prefix + 'ecefLocation_z'
     ])
 
 rows = []

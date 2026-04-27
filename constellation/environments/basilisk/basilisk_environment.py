@@ -13,12 +13,11 @@ from Basilisk.utilities import macros
 from Basilisk.utilities.simIncludeGravBody import gravBodyFactory
 from Basilisk.utilities.SimulationBaseClass import SimBaseClass
 
-from ...constants import INTERVAL, TIMESTAMP
+from ...constants import INTERVAL, RADIUS_EARTH, TIMESTAMP
 from ...data import Actions, Constellation, TaskSet
 from ..base import BaseEnvironment
 from ..geodetics import GeodeticConversion
 from .basilisk_satellite import BasiliskSatellite
-from ...constants import RADIUS_EARTH
 from .time import datetime2basilisk, str2datetime
 
 
@@ -115,13 +114,9 @@ class BasiliskEnvironment(BaseEnvironment):
 
     def get_constellation(self) -> Constellation:
         constellation = [
-            basilisk_satellite.to_satellite()
-            for basilisk_satellite in self._satellites
+            basilisk_satellite.to_satellite() for basilisk_satellite in self._satellites
         ]
-        return Constellation({
-            satellite.id_: satellite
-            for satellite in constellation
-        })
+        return Constellation({satellite.id_: satellite for satellite in constellation})
 
     def take_actions(self, actions: Actions) -> None:
         for satellite, action in zip(self._satellites, actions):
@@ -130,9 +125,7 @@ class BasiliskEnvironment(BaseEnvironment):
             satellite.guide_attitude(action.target_location)
 
     def step(self) -> None:
-        self._simulator.ConfigureStopTime(
-            macros.sec2nano(self._timer.time * INTERVAL)
-        )
+        self._simulator.ConfigureStopTime(macros.sec2nano(self._timer.time * INTERVAL))
         self._simulator.ExecuteSimulation()
 
     def is_visible(self, tasks: TaskSet) -> torch.Tensor:
@@ -142,9 +135,7 @@ class BasiliskEnvironment(BaseEnvironment):
                 access_message = satellite._ground_mapping.accessOutMsgs[i]
                 access = access_message.read().hasAccess
                 state = satellite.power_sink.powerStatus
-                if access and state and (
-                    task.sensor_type == satellite.sensor_type
-                ):
+                if access and state and (task.sensor_type == satellite.sensor_type):
                     visibility[satellite_idx, i] = 1
         return visibility
 

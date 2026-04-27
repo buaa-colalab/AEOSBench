@@ -7,18 +7,18 @@ __all__ = [
 ]
 
 import dataclasses
-from functools import cached_property
 import math
 import random
 from collections import UserList
-from typing import Any, NamedTuple, TypedDict, cast
-import einops
+from functools import cached_property
+from typing import Any, TypedDict, cast
 from typing_extensions import Self
 
+import einops
 import torch
 from todd.patches.py_ import json_dump, json_load
 
-from ..constants import MAX_TIME_STEP, RADIUS_EARTH, ECCENTRICITY_EARTH, MU_EARTH
+from ..constants import ECCENTRICITY_EARTH, MAX_TIME_STEP, RADIUS_EARTH
 from .constellations import SensorType
 from .coordinates import Coordinate, CoordinateECEF
 

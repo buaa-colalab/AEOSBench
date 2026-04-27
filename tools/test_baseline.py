@@ -2,14 +2,11 @@ import argparse
 import multiprocessing
 import pathlib
 from functools import partial
-import numpy as np
 
 import todd
 from todd.patches.py_ import json_dump, json_load
 
-from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
-from constellation.algorithms import TabuOptimalAlgorithm
-from constellation import ANNOTATIONS_ROOT
+from constellation import ANNOTATIONS_ROOT, CONSTELLATIONS_ROOT, TASKSETS_ROOT
 from constellation.algorithms.replay import ReplayAlgorithm
 from constellation.controller import Controller
 from constellation.data import Constellation, Task, TaskSet
@@ -108,9 +105,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    work_dir: pathlib.Path = (
-        pathlib.Path('work_dirs/test_baseline') / args.name
-    )
+    work_dir: pathlib.Path = (pathlib.Path('work_dirs/test_baseline') / args.name)
 
     parallel_test(work_dir, args.num_workers, 'val_seen')
     parallel_test(work_dir, args.num_workers, 'val_unseen')

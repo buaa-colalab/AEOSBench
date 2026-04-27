@@ -1,7 +1,8 @@
 import bisect
-from collections import UserList
 import dataclasses
+import pathlib
 import random
+from collections import UserList
 from typing import Any, Iterable, NamedTuple, TypeVar, cast
 
 import einops
@@ -12,7 +13,6 @@ from todd.patches.py_ import get_, json_load
 from todd.registries import CollateRegistry
 from todd.runners import BaseRunner, Memo
 from todd.runners.callbacks import TensorBoardCallback
-from todd.runners.memo import Memo
 from todd.runners.metrics import Metric
 from todd.runners.registries import MetricRegistry
 from todd.utils import NestedTensorCollectionUtils
@@ -24,23 +24,17 @@ from constellation import (
     MAX_TIME_STEP,
     STATISTICS_PATH,
     TASKSETS_ROOT,
-    TRAJECTORIES_ROOT,
 )
 from constellation.data import Constellation, TaskSet
 
+from .constants import SATELLITE_DIM, TASK_DIM
 from .dataset import (
     DynamicConstellationData,
     DynamicTasksetData,
     Statistics,
     TrajectoryData,
 )
-from .registries import (
-    ConstellationDatasetRegistry,
-    ConstellationModelRegistry,
-)
-from .constants import SATELLITE_DIM, TASK_DIM
-
-import pathlib
+from .registries import ConstellationDatasetRegistry, ConstellationModelRegistry
 
 # TODO: delete
 TRAJECTORIES_ROOT = pathlib.Path('data/trajectories.tabu.1')
@@ -224,8 +218,7 @@ class TimeDataset(torch.utils.data.Dataset[Batch]):
         dynamic_data = constellation['data']
 
         constellation_path = (
-            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            CONSTELLATIONS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         _, static_data = Constellation.load(
             str(constellation_path),
@@ -249,8 +242,7 @@ class TimeDataset(torch.utils.data.Dataset[Batch]):
         t = progress.shape[0]
 
         taskset_path = (
-            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.json'
+            TASKSETS_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.json'
         )
         _, static_data = TaskSet.load(str(taskset_path)).to_tensor()
 
@@ -340,8 +332,7 @@ class TimeDataset(torch.utils.data.Dataset[Batch]):
         id_ = self._annotations[index]
 
         trajectory: TrajectoryData = torch.load(
-            TRAJECTORIES_ROOT / self._split / f'{id_ // 1000:02}'
-            / f'{id_:05}.pth',
+            TRAJECTORIES_ROOT / self._split / f'{id_ // 1000:02}' / f'{id_:05}.pth',
         )
 
         constellation_data = self._load_constellation(

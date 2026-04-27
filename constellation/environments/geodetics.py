@@ -31,20 +31,15 @@ class GeodeticConversion:
         pcpf_position = [0., 0., 0.]
         eccentricity_2 = 0.0
         if planet_ellipsoid_radius >= 0:
-            square_ratio = (
-                planet_ellipsoid_radius**2 / planet_spherical_radius**2
-            )
+            square_ratio = (planet_ellipsoid_radius**2 / planet_spherical_radius**2)
             eccentricity_2 = 1.0 - square_ratio
         s_phi = math.sin(lla_position[0])
         n_val = planet_spherical_radius / math.sqrt(
             1.0 - eccentricity_2 * s_phi * s_phi,
         )
-        pcpf_position[0] = (n_val + lla_position[2]) * (
-            math.cos(lla_position[0]) * math.cos(lla_position[1])
-        )
-        pcpf_position[1] = (n_val + lla_position[2]) * (
-            math.cos(lla_position[0]) * math.sin(lla_position[1])
-        )
-        pcpf_position[2] = (((1.0 - eccentricity_2) * n_val + lla_position[2])
-                            * s_phi)
+        pcpf_position[0] = (n_val + lla_position[2]
+                            ) * (math.cos(lla_position[0]) * math.cos(lla_position[1]))
+        pcpf_position[1] = (n_val + lla_position[2]
+                            ) * (math.cos(lla_position[0]) * math.sin(lla_position[1]))
+        pcpf_position[2] = (((1.0 - eccentricity_2) * n_val + lla_position[2]) * s_phi)
         return pcpf_position

@@ -6,10 +6,10 @@ In particular, secrets should be used in preference to the default
 pseudo-random number generator in the random module, which is designed
 for modelling and simulation, not security or cryptography.
 """
-import sys
 import json
 import random
 import secrets
+import sys
 from typing import Union
 
 TOTAL_SENSOR_TYPES = [1, 2]
@@ -197,8 +197,8 @@ def generate_satellites(
     ):
         satellite_type_ = satellite_types_[satellite_id_]
         mass_range = TOTAL_SATELLITES_TYPES[satellite_type_]["mass"]
-        reaction_wheels_round = TOTAL_SATELLITES_TYPES[satellite_type_][
-            "reaction_wheels"]
+        reaction_wheels_round = TOTAL_SATELLITES_TYPES[satellite_type_]["reaction_wheels"
+                                                                        ]
 
         inertia_params = generate_inertia_params(inertia_, satellite_id_)
         mass_params = generate_mass_params(mass_, satellite_id_, mass_range)
@@ -256,9 +256,11 @@ def generate_satellite_types_params(satellites_num):
 def generate_inertia_params(inertia_, i):
     global max_in
     if not inertia_:
-        inertia_params = [random.uniform(50,150), 0, 0,
-                          0, random.uniform(50,150), 0,
-                          0, 0, random.uniform(50,150)]
+        inertia_params = [
+            random.uniform(50, 150), 0, 0, 0,
+            random.uniform(50, 150), 0, 0, 0,
+            random.uniform(50, 150)
+        ]
     else:
         inertia_params = inertia_[i]
     for i in inertia_params:
@@ -363,19 +365,17 @@ def generate_reaction_wheels_params(
     i,
     reaction_wheels_range,
 ):
-    rw_type = random.choice(["12","14","16"])
-    max_momentum_range = reaction_wheels_range["max_momentum"]
+    rw_type = random.choice(["12", "14", "16"])
     rw_speed_init_range = reaction_wheels_range["rw_speed_init"]
     power_range = reaction_wheels_range["power"]
     efficiency_range = reaction_wheels_range["efficiency"]
 
     if rw_type == "12":
-        max_momentum_ = random.choice([12.0,25.0,50.0])
+        max_momentum_ = random.choice([12.0, 25.0, 50.0])
     elif rw_type == "14":
-        max_momentum_ = random.choice([75.0,25.0,50.0])
+        max_momentum_ = random.choice([75.0, 25.0, 50.0])
     else:
-        max_momentum_ = random.choice([75.0,100.0,50.0])
-
+        max_momentum_ = random.choice([75.0, 100.0, 50.0])
 
     rw_speed_init_ = secrets_random_round(
         rw_speed_init_range[0],
@@ -528,7 +528,9 @@ if __name__ == '__main__':
     # eccentricity = [0.01] * NUM_ORBITS
     eccentricity = [random.uniform(0.0, 0.002) for _ in range(NUM_ORBITS)]
     # semi_major_axis = [7000] * NUM_ORBITS
-    semi_major_axis = [random.uniform(6500.0, 8000.0) * 1000 for _ in range(NUM_ORBITS)] # LEO orbits
+    semi_major_axis = [
+        random.uniform(6500.0, 8000.0) * 1000 for _ in range(NUM_ORBITS)
+    ]  # LEO orbits
     # inclination = [0., 60.]
     inclination = [random.uniform(0.0, 180.0) for _ in range(NUM_ORBITS)]
     # r = [90.] * NUM_ORBITS

@@ -1,16 +1,15 @@
 import argparse
-from pathlib import Path
 
 import numpy as np
-import torch
 import tqdm
 
 from constellation.algorithms import OptimalAlgorithm
+from constellation.callbacks.memo import get_memo
+from constellation.rl.controller_environment import ControllerEnvironment
+
+from ..environments.base import BaseEnvironment
 # from ..callbacks.memo import get_memo
 from ..task_managers import TaskManager
-from ..environments.base import BaseEnvironment
-from constellation.rl.controller_environment import ControllerEnvironment
-from constellation.callbacks.memo import Memo, get_memo
 
 
 def parse_args():
@@ -73,15 +72,11 @@ def main():
         'PC': np.mean([metrics['PC'] for metrics in metrics_list])
     }
 
-    print(
-        f"Evaluation results on {args.split} split ({args.num_episodes} episodes):"
-    )
+    print(f"Evaluation results on {args.split} split ({args.num_episodes} episodes):")
     print(f"Completion Rate (CR): {metrics_mean['CR']:.4f}")
     print(f"Priority Completion Rate (PCR): {metrics_mean['PCR']:.4f}")
     print(f"Weighted Completion Rate (WCR): {metrics_mean['WCR']:.4f}")
-    print(
-        f"Weighted Priority Completion Rate (WPCR): {metrics_mean['WPCR']:.4f}"
-    )
+    print(f"Weighted Priority Completion Rate (WPCR): {metrics_mean['WPCR']:.4f}")
     print(f"Turn Around Time (TT): {metrics_mean['TT']:.4f}")
     print(f"Power Consumption (PC): {metrics_mean['PC']:.4f}")
 

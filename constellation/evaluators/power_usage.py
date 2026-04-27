@@ -3,6 +3,7 @@ __all__ = [
 ]
 
 import torch
+
 from .base import BaseEvaluator
 
 
@@ -30,9 +31,7 @@ class PowerUsageEvaluator(BaseEvaluator):
 
     def after_run(self) -> None:
         sensor_power = torch.tensor([
-            satellite.sensor.power for satellite in
-            self.controller.environment.get_constellation().values()
+            satellite.sensor.power
+            for satellite in self.controller.environment.get_constellation().values()
         ])
-        self.metrics['PC'] = (
-            torch.sum(self.working_time_steps * sensor_power).item()
-        )
+        self.metrics['PC'] = (torch.sum(self.working_time_steps * sensor_power).item())

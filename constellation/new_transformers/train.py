@@ -4,10 +4,10 @@ import pathlib
 
 from todd.configs import PyConfig
 from todd.patches.py_ import DictAction
+from todd.registries import RunnerRegistry
+from todd.runners import BaseRunner
 from todd.utils import init_seed
 from torch import nn
-from todd.runners import BaseRunner
-from todd.registries import RunnerRegistry
 
 from .utils import log
 

@@ -22,19 +22,18 @@ __all__ = [
 ]
 
 import dataclasses
-import json
 import math
 import random
 from collections import UserDict
 from enum import IntEnum, auto
 from typing import Any, TypedDict, cast
-import numpy as np
-import numpy.typing as npt
 from typing_extensions import Self
 
+import numpy as np
+import numpy.typing as npt
 import torch
-from todd.patches.py_ import json_dump, json_load
 from Basilisk.utilities import macros, orbitalMotion
+from todd.patches.py_ import json_dump, json_load
 
 from ..constants import MU_EARTH
 from .orbits import MRP_ORBIT, Orbit, OrbitDicts, Orbits
@@ -269,7 +268,10 @@ class MRPControl:
 
     @classmethod
     def sample(cls, inertia: Inertia, reaction_wheels: ReactionWheels) -> Self:
-        max_momentum, = {reaction_wheel.max_momentum for reaction_wheel in reaction_wheels}
+        max_momentum, = {
+            reaction_wheel.max_momentum
+            for reaction_wheel in reaction_wheels
+        }
         k = random.uniform(2, 5) * max(inertia) / max_momentum
         ki = random.uniform(0, 0.01)
         p = random.uniform(2, 4) * k
@@ -367,11 +369,8 @@ class Satellite:
         inertia = cast(
             Inertia,
             tuple(
-                torch.distributions.Uniform(50, 200)\
-                    .sample((3, ))\
-                    .diag()\
-                    .flatten()\
-                    .tolist()
+                torch.distributions.Uniform(50,
+                                            200).sample((3, )).diag().flatten().tolist()
             ),
         )
         mass = random.uniform(50, 200)
@@ -452,10 +451,7 @@ class Constellation(UserDict[int, Satellite]):
 
     @property
     def orbits(self) -> Orbits:
-        orbit_dict = {
-            satellite.orbit_id: satellite.orbit
-            for satellite in self.values()
-        }
+        orbit_dict = {satellite.orbit_id: satellite.orbit for satellite in self.values()}
         return Orbits(
             sorted(
                 orbit_dict.values(),
@@ -518,12 +514,8 @@ class Constellation(UserDict[int, Satellite]):
 
     def static_to_tensor(self) -> tuple[torch.Tensor, torch.Tensor]:
         satellites = self.sort()
-        sensor_type = torch.tensor([
-            satellite.sensor.type_ for satellite in satellites
-        ])
-        data = torch.tensor([
-            satellite.static_data for satellite in satellites
-        ])
+        sensor_type = torch.tensor([satellite.sensor.type_ for satellite in satellites])
+        data = torch.tensor([satellite.static_data for satellite in satellites])
         # TODO: check data type is float32
         return sensor_type, data
 
@@ -532,9 +524,7 @@ class Constellation(UserDict[int, Satellite]):
         sensor_enabled = torch.tensor([
             satellite.sensor.enabled for satellite in satellites
         ])
-        data = torch.tensor([
-            satellite.dynamic_data for satellite in satellites
-        ])
+        data = torch.tensor([satellite.dynamic_data for satellite in satellites])
         return sensor_enabled, data
 
     def to_unity_json(self) -> list[SatelliteDataJson]:

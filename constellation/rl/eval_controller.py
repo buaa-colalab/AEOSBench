@@ -4,17 +4,17 @@ __all__ = [
 
 import argparse
 import atexit
-import signal
 import importlib
 import os
 import pathlib
+import signal
 from functools import partial
 from itertools import count
 from typing import Any, List
 
 import numpy as np
-import pandas as pd
 import numpy.typing as npt
+import pandas as pd
 import todd
 import torch
 from stable_baselines3 import PPO
@@ -23,17 +23,20 @@ from todd.configs import PyConfig
 from todd.patches.py_ import DictAction, json_dump
 from todd.utils import init_seed
 
-from .environment import Environment, Observation, null_observation
-from .policy import Policy
-from constellation.loggers import BaseLogger, TrajectoryLogger, VisualizationLogger
-from constellation.new_transformers.model import GLOBALS
 from constellation.callbacks.base import BaseCallback
 from constellation.callbacks.memo import Memo
 from constellation.evaluators import (
-    BaseEvaluator, CompletionRateEvaluator, PCompletionRateEvaluator,
-    WCompletionRateEvaluator, WPCompletionRateEvaluator,
-    TurnAroundTimeEvaluator
+    CompletionRateEvaluator,
+    PCompletionRateEvaluator,
+    TurnAroundTimeEvaluator,
+    WCompletionRateEvaluator,
+    WPCompletionRateEvaluator,
 )
+from constellation.loggers import TrajectoryLogger, VisualizationLogger
+from constellation.new_transformers.model import GLOBALS
+
+from .environment import Environment, Observation, null_observation
+from .policy import Policy
 
 COMPLETION_RATE_THRESHOLD = 0.01
 
@@ -84,8 +87,8 @@ class EvalEnvironment(Environment):
             completion_rates: dict[int, float] = \
                 df['completion_rate'].to_dict()
             self._annotations = [
-                annotation for annotation in self._annotations if
-                completion_rates.get(annotation, 0) < COMPLETION_RATE_THRESHOLD
+                annotation for annotation in self._annotations
+                if completion_rates.get(annotation, 0) < COMPLETION_RATE_THRESHOLD
             ]
 
     @property
@@ -123,8 +126,11 @@ class EvalEnvironment(Environment):
         if self.all_done:
             return null_observation, 0.0, False, False, dict(all_done=True)
 
-        if self._task_manager.progress.any(
-        ) and self._simulator.timer.time % 50 == 0 and self._simulator.timer.time <= 1800:
+        _timer_time = self._simulator.timer.time
+        if (
+            self._task_manager.progress.any() and _timer_time % 50 == 0
+            and _timer_time <= 1800
+        ):
             todd.logger.info(
                 "env_rank %s sim_step %d progress_sum %d finished_num %d",
                 self._rank,
@@ -141,9 +147,7 @@ class EvalEnvironment(Environment):
         self._last_task_id_list = task_id_list
         self._last_is_visible = is_visible
 
-        observation, reward, terminated, truncated, info = (
-            super().step(action)
-        )
+        observation, reward, terminated, truncated, info = (super().step(action))
 
         id_ = self._get_annotation()
         info.update(
@@ -181,6 +185,23 @@ class EvalController:
         for callback in self._callbacks:
             callback.on_init(controller=self)
 
+    def _record_completed(self, dones, infos, i: int) -> None:
+        for done, info in zip(dones, infos):
+            if done and not info.get('all_done', False):
+                id_ = info['id']
+                metrics = info['metrics']
+
+                todd.logger.info(
+                    f"rank %s step %d {id_=}\n{metrics=}",
+                    os.environ['RANK'],
+                    i,
+                )
+
+                json_path = (
+                    self.gen_trajectory_dir / f'{id_ // 1000:02d}' / f'{id_:05d}.json'
+                )
+                json_dump(metrics, str(json_path))
+
     def run(self) -> None:
         observations = self.environment.reset()
 
@@ -199,9 +220,7 @@ class EvalController:
             if 'pred_mask' in GLOBALS:
                 actions = list(zip(actions, GLOBALS.pop('pred_mask').cpu()))
 
-            observations, rewards, dones, infos = self.environment.step(
-                actions
-            )
+            observations, rewards, dones, infos = self.environment.step(actions)
 
             dispatch_ids = []
             if infos and 'task_id_list' in infos[0]:
@@ -210,19 +229,7 @@ class EvalController:
             for callback in self._callbacks:
                 callback.after_step(dispatch_id=dispatch_ids)
 
-            for done, info in zip(dones, infos):
-                if done and not info.get('all_done', False):
-                    id_ = info['id']
-                    metrics = info['metrics']
-
-                    todd.logger.info(
-                        f"rank %s step %d {id_=}\n{metrics=}",
-                        os.environ['RANK'],
-                        i,
-                    )
-
-                    json_path = self.gen_trajectory_dir / f'{id_ // 1000:02d}' / f'{id_:05d}.json'
-                    json_dump(metrics, str(json_path))
+            self._record_completed(dones, infos, i)
 
             if all(info.get('all_done', False) for info in infos):
                 todd.logger.info(

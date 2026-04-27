@@ -1,33 +1,15 @@
 import argparse
-import multiprocessing
 import pathlib
-from functools import partial
-import numpy as np
 
 import todd
-from todd.patches.py_ import json_dump, json_load
 import torch
+from todd.patches.py_ import json_load
 
-from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
-from constellation.algorithms import TabuOptimalAlgorithm
 from constellation import ANNOTATIONS_ROOT
-from constellation.controller import Controller
-from constellation.data import Constellation, Task, TaskSet
-from constellation.environments import BasiliskEnvironment
-from constellation.evaluators import (
-    CompletionRateEvaluator,
-    PCompletionRateEvaluator,
-    PowerUsageEvaluator,
-    TurnAroundTimeEvaluator,
-    WCompletionRateEvaluator,
-    WPCompletionRateEvaluator,
-)
 
 
 def evaluate(work_dir: pathlib.Path, split: str) -> None:
-    annotations: list[int] = json_load(
-        str(ANNOTATIONS_ROOT / f'{split}.tiny.json')
-    )
+    annotations: list[int] = json_load(str(ANNOTATIONS_ROOT / f'{split}.tiny.json'))
     metrics = torch.tensor([
         json_load(str(work_dir / split / f'{i // 1000:02}' / f'{i:05}.json'))
         for i in annotations
@@ -44,9 +26,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    work_dir: pathlib.Path = (
-        pathlib.Path('work_dirs/test_baseline') / args.name
-    )
+    work_dir: pathlib.Path = (pathlib.Path('work_dirs/test_baseline') / args.name)
 
     evaluate(work_dir, 'val_seen')
     evaluate(work_dir, 'val_unseen')

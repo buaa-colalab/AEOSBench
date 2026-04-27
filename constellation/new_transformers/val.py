@@ -13,10 +13,10 @@ import torch.distributed
 from todd.configs import PyConfig
 from todd.patches.py_ import DictAction
 from todd.patches.torch import get_rank, get_world_size
-from torch import nn
-
 from todd.registries import RunnerRegistry
 from todd.runners import BaseRunner
+from torch import nn
+
 from .utils import log
 
 
@@ -79,10 +79,7 @@ class MasterMonitor(Monitor):
 
     @property
     def active(self) -> bool:
-        return (
-            self._whitelist is None
-            or len(self._whitelist - self._blacklist) > 0
-        )
+        return (self._whitelist is None or len(self._whitelist - self._blacklist) > 0)
 
     @property
     def names(self) -> list[str]:

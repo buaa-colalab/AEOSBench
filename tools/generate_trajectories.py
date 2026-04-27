@@ -4,8 +4,8 @@ import pathlib
 from typing import Iterable
 
 import todd
-from todd.patches.py_ import json_dump, json_load
 import torch
+from todd.patches.py_ import json_dump
 
 from constellation import CONSTELLATIONS_ROOT, TASKSETS_ROOT, TRAJECTORIES_ROOT
 from constellation.algorithms import OptimalAlgorithm
@@ -18,10 +18,8 @@ from constellation.evaluators import (
     PowerUsageEvaluator,
     TurnAroundTimeEvaluator,
 )
-from constellation.loggers import ForbidTasksCallback
-from constellation.loggers.filter_task import FilterTaskCallback
+from constellation.loggers import ForbidTasksCallback, TrajectoryLogger
 from constellation.task_managers import TaskManager
-from constellation.loggers import TrajectoryLogger
 
 RANK = int(os.environ['RANK'])
 WORLD_SIZE = int(os.environ['WORLD_SIZE'])

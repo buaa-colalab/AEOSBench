@@ -1,4 +1,5 @@
 [flake8]
+max-line-length = 89
 ignore = D100,D101,D102,D103,D104,D105,D106,D107,E126,E201,E241,N805,N812,N817,W503,W504
 extend-exclude =
     data/

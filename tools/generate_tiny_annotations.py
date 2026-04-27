@@ -1,8 +1,6 @@
-import argparse
 import todd
 import torch
 from todd.patches.py_ import json_dump, json_load
-from tqdm import trange
 
 from constellation import ANNOTATIONS_ROOT, TRAJECTORIES_ROOT
 

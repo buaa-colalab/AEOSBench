@@ -34,12 +34,10 @@ def generate_annotations(
 
     for i in trange(n):
         metric_paths = {
-            epoch: trajectories_root / f'{split}/{i//1000:02}/{i:05}.json'
+            epoch: trajectories_root / f'{split}/{i // 1000:02}/{i:05}.json'
             for epoch, trajectories_root in trajectories_roots.items()
         }
-        if not all(
-            metric_path.exists() for metric_path in metric_paths.values()
-        ):
+        if not all(metric_path.exists() for metric_path in metric_paths.values()):
             continue
         metrics = {
             epoch: json_load(str(metric_path))['CR']

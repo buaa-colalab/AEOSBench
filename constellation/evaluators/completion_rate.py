@@ -3,6 +3,7 @@ __all__ = [
 ]
 
 import torch
+
 from .base import BaseEvaluator
 
 
@@ -36,9 +37,7 @@ class CompletionRateEvaluator(BaseEvaluator):
             / durations.sum()
         )
         partial_completion_rate = self.max_progress / durations
-        weighted_partial_completion_rate = (
-            self.max_progress.sum() / durations.sum()
-        )
+        weighted_partial_completion_rate = (self.max_progress.sum() / durations.sum())
 
         self.metrics.update({
             'CR': completion_rate,

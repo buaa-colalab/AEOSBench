@@ -33,8 +33,7 @@ def compute_eci(e, a, i_deg, raan_deg, arg_perigee_deg, true_anomaly_deg):
                           [np.sin(arg_perigee),
                            np.cos(arg_perigee), 0], [0, 0, 1]])
 
-    r_x_i = np.array([[1, 0, 0], [0, np.cos(i), -np.sin(i)],
-                      [0, np.sin(i), np.cos(i)]])
+    r_x_i = np.array([[1, 0, 0], [0, np.cos(i), -np.sin(i)], [0, np.sin(i), np.cos(i)]])
 
     r_z_raan = np.array([[np.cos(raan), -np.sin(raan), 0],
                          [np.sin(raan), np.cos(raan), 0], [0, 0, 1]])
@@ -79,17 +78,16 @@ def mrp_to_dcm(mrp):
     # 将MRP转换为方向余弦矩阵DCM。
     s = np.array(mrp)
     s_norm_sq = np.dot(s, s)
-    I = np.eye(3)
+    eye3 = np.eye(3)
     S = np.array([[0, -s[2], s[1]], [s[2], 0, -s[0]], [-s[1], s[0], 0]])
     # 根据 MRP 转换公式计算 DCM
-    C = ((1 - s_norm_sq) * I + 2 * np.outer(s, s) - 2 * S) / (1 + s_norm_sq)**2
+    C = ((1 - s_norm_sq) * eye3 + 2 * np.outer(s, s) - 2 * S) / (1 + s_norm_sq)**2
     return C
 
 
 def compute_max_angular_velocity(constellation):
 
     satellites = constellation['satellites']
-    orbits = {orbit['id_']: orbit for orbit in constellation['orbits']}
 
     max_angular_velocities = {}
 
@@ -179,8 +177,7 @@ if __name__ == "__main__":
                 },
                 'true_anomaly': 136.9781740870415,
                 'mrp_attitude_bn': [
-                    0.08241958119604338, -0.6433596526211803,
-                    -0.5239338711882789
+                    0.08241958119604338, -0.6433596526211803, -0.5239338711882789
                 ]
             },
         ],
