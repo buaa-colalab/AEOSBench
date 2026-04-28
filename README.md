@@ -3,12 +3,12 @@
 <h1>Towards Realistic Earth-Observation Constellation Scheduling: Benchmark and Methodology</h1>
 
 <div>
-    <a href='URL_HERE' target='_blank'>Luting Wang</a><sup>*,1</sup>&emsp;
-    <a href='URL_HERE' target='_blank'>Yinghao Xiang</a><sup>*,1</sup>&emsp;
-    <a href='URL_HERE' target='_blank'>Hongliang Huang</a><sup>1</sup>
-    <a href='URL_HERE' target='_blank'>Dongjun Li</a><sup>1</sup>
-    <a href='URL_HERE' target='_blank'>Chen Gao</a><sup>&dagger;</sup>
-    <a href='URL_HERE' target='_blank'>Si Liu</a><sup>&dagger;</sup>
+    Luting Wang<sup>*,1</sup>&emsp;
+    Yinghao Xiang<sup>*,1</sup>&emsp;
+    Hongliang Huang<sup>1</sup>
+    Dongjun Li<sup>1</sup>
+    Chen Gao<sup>&dagger;</sup>
+    Si Liu<sup>&dagger;</sup>
 </div>
 <div>
     <sup>1</sup>Beihang University&emsp;
