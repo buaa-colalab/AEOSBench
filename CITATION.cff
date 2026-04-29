@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the paper below."
+title: "Towards Realistic Earth-Observation Constellation Scheduling: Benchmark and Methodology"
+type: software
+authors:
+  - family-names: Wang
+    given-names: Luting
+  - family-names: Xiang
+    given-names: Yinghao
+  - family-names: Huang
+    given-names: Hongliang
+  - family-names: Li
+    given-names: Dongjun
+  - family-names: Gao
+    given-names: Chen
+  - family-names: Liu
+    given-names: Si
+repository-code: "https://github.com/buaa-colalab/AEOSBench"
+url: "https://arxiv.org/abs/2510.26297"
+license: Apache-2.0
+preferred-citation:
+  type: article
+  title: "Towards Realistic Earth-Observation Constellation Scheduling: Benchmark and Methodology"
+  authors:
+    - family-names: Wang
+      given-names: Luting
+    - family-names: Xiang
+      given-names: Yinghao
+    - family-names: Huang
+      given-names: Hongliang
+    - family-names: Li
+      given-names: Dongjun
+    - family-names: Gao
+      given-names: Chen
+    - family-names: Liu
+      given-names: Si
+  journal: "arXiv preprint arXiv:2510.26297"
+  year: 2025
+  url: "https://arxiv.org/abs/2510.26297"
+  identifiers:
+    - type: arxiv
+      value: "2510.26297"

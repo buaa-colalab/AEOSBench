@@ -5,10 +5,10 @@
 <div>
     Luting Wang<sup>*,1</sup>&emsp;
     Yinghao Xiang<sup>*,1</sup>&emsp;
-    Hongliang Huang<sup>1</sup>
-    Dongjun Li<sup>1</sup>
-    Chen Gao<sup>&dagger;</sup>
-    Si Liu<sup>&dagger;</sup>
+    Hongliang Huang<sup>1</sup>&emsp;
+    Dongjun Li<sup>1</sup>&emsp;
+    Chen Gao<sup>&dagger;,1</sup>&emsp;
+    Si Liu<sup>&dagger;,1</sup>
 </div>
 <div>
     <sup>1</sup>Beihang University&emsp;
@@ -143,16 +143,9 @@ CUDA_VISIBLE_DEVICES=0 WORLD_SIZE=1 RANK=0 \
 
 ## 📝 Citation
 
-If you find this work useful, please consider citing our paper:
-
-```bibtex
-@article{wang2025towards,
-  title={Towards Realistic Earth-Observation Constellation Scheduling: Benchmark and Methodology},
-  author={Wang, Luting and Xiang, Yinghao and Huang, Hongliang and Li, Dongjun and Gao, Chen and Liu, Si},
-  journal={arXiv preprint arXiv:2510.26297},
-  year={2025}
-}
-```
+If you find this work useful, please cite our paper using the metadata in
+[CITATION.cff](./CITATION.cff). GitHub will also show citation formats through
+the **Cite this repository** button.
 
 ## 📄 License
 
